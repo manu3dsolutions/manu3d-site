@@ -1,0 +1,12 @@
+id;title;category;price;image;description;rarity;is_new
+101;"Pikachu - Gameboy Breakout";Decor;24.00€;/assets/products/pikachu.jpg;"Relief mural effet or Antique. Pikachu jaillissant d'une cartouche Gameboy. Design par ABC3D.";epic;true
+102;"Lugia - Soul Silver";Decor;24.00€;/assets/products/lugia.jpg;"Le gardien des mers en relief sortant de sa cartouche. Impression résine & finition Or Vieilli. Design ABC3D.";legendary;false
+103;"Ho-Oh - Heart Gold";Decor;24.00€;/assets/products/hooh.jpg;"L'oiseau légendaire Arc-en-ciel. Sculpture murale détaillée résine, effet or. Design ABC3D.";legendary;false
+104;"Dracolosse (Dragonite)";Figurine;24.00€;/assets/products/dragonite.jpg;"Carte en relief effet métal antique. Le dragon original, majestueux et puissant. Design ABC3D.";rare;false
+105;"Electhor (Zapdos)";Decor;24.00€;/assets/products/zapdos.jpg;"L'oiseau de foudre. Cadre relief haute précision, peinture effet or. Design ABC3D.";epic;false
+106;"Groudon - Ruby";Decor;24.00€;/assets/products/groudon.jpg;"Le titan de la terre brisant sa cartouche. Texture rocailleuse réaliste. Design ABC3D.";legendary;false
+107;"Léviator (Gyarados)";Decor;24.00€;/assets/products/gyarados.jpg;"La fureur du dragon d'eau sortant de l'écran. Finition dorée impeccable. Design ABC3D.";epic;true
+108;"Papilusion (Butterfree)";Figurine;24.00€;/assets/products/butterfree.jpg;"Délicatesse et nostalgie. Carte relief avec patine dorée artisanale. Design ABC3D.";common;false
+109;"Excelangue (Lickitung)";Figurine;24.00€;/assets/products/lickitung.jpg;"Une touche d'humour en or. Finition lisse et détaillée. Design ABC3D.";common;false
+110;"Chrysacier (Metapod)";Figurine;24.00€;/assets/products/metapod.jpg;"L'armure impénétrable. Carte relief minimaliste et élégante. Design ABC3D.";common;false
+111;"Chenipan (Caterpie)";Figurine;24.00€;/assets/products/caterpie.jpg;"Le début de l'aventure. Sculpture détaillée sur carte or. Design ABC3D.";common;false
