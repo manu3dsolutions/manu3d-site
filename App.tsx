@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Navigation from './components/Navigation';
+import AppNavigation from './components/AppNavigation';
 import Hero from './components/Hero';
 import Services from './components/Services';
 import Partners from './components/Partners';
@@ -68,7 +68,7 @@ function AppContent() {
     <div className="min-h-screen bg-manu-black text-white font-sans selection:bg-manu-orange selection:text-black pt-0">
       <PromoBanner />
       
-      <Navigation currentView={currentView} setView={setCurrentView} />
+      <AppNavigation currentView={currentView} setView={setCurrentView} />
       
       <CartSidebar />
       
