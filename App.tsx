@@ -46,7 +46,7 @@ function AppContent() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   
   // State principal de navigation
-  const [currentView, setCurrentView] = useState<'home' | 'shop' | 'atelier'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'shop' | 'atelier' | 'partners'>('home');
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -91,7 +91,6 @@ function AppContent() {
                 </p>
              </div>
              
-             {/* On remonte le calculateur B2B pour la conversion immédiate */}
              <B2BService />
              <Services />
              <Portfolio />
@@ -103,18 +102,22 @@ function AppContent() {
         {/* VIEW: SHOP (E-commerce) */}
         {currentView === 'shop' && (
           <div className="animate-in fade-in duration-500 pt-20">
-              {/* Header Section Boutique */}
-              <div className="bg-[#0F1216] border-b border-gray-800 py-12 px-4 text-center relative overflow-hidden">
-                 <div className="absolute top-0 right-0 w-64 h-64 bg-manu-orange/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                 <h1 className="text-4xl md:text-6xl font-display font-bold text-white mb-4 uppercase relative z-10">
-                   Le Loot <span className="text-manu-orange">Shop</span>
+              {/* Le bandeau Loot Shop a été supprimé ici, remplacé par le header créateur dans ProductList */}
+              <ProductList />
+          </div>
+        )}
+
+        {/* VIEW: PARTNERS (Community) */}
+        {currentView === 'partners' && (
+          <div className="animate-in fade-in duration-500 pt-20">
+              <div className="bg-[#0F1216] border-b border-gray-800 py-12 px-4 text-center">
+                 <h1 className="text-4xl md:text-6xl font-display font-bold text-white mb-4 uppercase">
+                   La <span className="text-manu-orange">Communauté</span>
                  </h1>
-                 <p className="text-gray-400 max-w-2xl mx-auto relative z-10">
-                   Figurines peintes à la main, décorations rares et goodies. Stock limité.
+                 <p className="text-gray-400 max-w-2xl mx-auto">
+                   Nos partenaires officiels, nos sponsors locaux et l'agenda des conventions.
                  </p>
               </div>
-
-              <ProductList />
               <Partners />
           </div>
         )}
