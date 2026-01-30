@@ -5,8 +5,9 @@ import { useLiveContent } from '../LiveContent';
 import { supabase } from '../supabaseClient';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
-// ID Client PayPal (Remplacer par le vrai ID de production dans .env pour le passage en PROD)
-const PAYPAL_CLIENT_ID = "test"; // Mode Sandbox. Mettre "AV_..." pour la prod.
+// ID Client PayPal récupéré depuis le fichier .env
+// Si pas défini, on utilise "test" (Sandbox)
+const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID || "test";
 
 const CartSidebar: React.FC = () => {
   const { 
@@ -55,7 +56,6 @@ const CartSidebar: React.FC = () => {
          const currentIsValid = shippingMethod && availableMethods.find(m => m.id === shippingMethod.id);
          if (!currentIsValid) {
              // Sélectionner par défaut le moins cher (souvent le premier si trié par prix)
-             // On s'assure que 'availableMethods' est trié par prix croissant (normalement fait dans LiveContent)
              setShippingMethod(availableMethods[0]);
          }
      }
@@ -145,19 +145,7 @@ const CartSidebar: React.FC = () => {
 
   // --- GENERATE INVOICE HTML (SIMULATION EMAIL) ---
   const sendConfirmationEmail = async (orderId: string) => {
-      // Dans une vraie app, ceci appellerait une API (ex: EmailJS ou Supabase Edge Function)
-      // Ici on simule l'envoi
       console.log(`📧 ENVOI EMAIL A ${customerInfo.email}...`);
-      
-      const emailContent = `
-        <h1>Merci ${customerInfo.name} !</h1>
-        <p>Votre commande #${orderId} est confirmée.</p>
-        <p>Total payé : ${finalTotal.toFixed(2)}€</p>
-        <p>Livraison à : ${customerInfo.address}, ${customerInfo.zip} ${customerInfo.city}</p>
-        <p>Téléphone : ${customerInfo.phone}</p>
-      `;
-      
-      // Simulation délai réseau
       await new Promise(r => setTimeout(r, 1500)); 
       console.log("✅ EMAIL ENVOYÉ !");
   };
@@ -182,10 +170,7 @@ const CartSidebar: React.FC = () => {
           
           const { data, error } = await supabase.from('orders').insert(orderData).select();
           
-          if (error) {
-              // En cas d'erreur BDD (ex: table pas à jour), on log mais on affiche quand même succès au client car il a payé
-              console.error("Erreur sauvegarde commande BDD:", error);
-          }
+          if (error) console.error("Erreur BDD:", error);
 
           const orderId = data ? data[0].id : transactionId.slice(-6);
 
@@ -198,7 +183,7 @@ const CartSidebar: React.FC = () => {
 
       } catch (err) {
           console.error("Erreur critique:", err);
-          alert("Erreur lors de l'enregistrement, mais votre paiement est validé. Contactez-nous.");
+          alert("Erreur lors de l'enregistrement. Contactez-nous.");
       } finally {
           setIsProcessing(false);
       }
@@ -424,10 +409,10 @@ const CartSidebar: React.FC = () => {
                     {/* Choix Méthode */}
                     <div className="flex gap-2">
                         <button onClick={() => setPaymentMethod('paypal')} className={`flex-1 py-3 rounded-lg border flex items-center justify-center gap-2 font-bold text-sm transition-all ${paymentMethod === 'paypal' ? 'bg-[#0070BA] border-[#0070BA] text-white' : 'bg-[#151921] border-gray-800 text-gray-400'}`}>
-                             PayPal
+                             PayPal / CB
                         </button>
                         <button onClick={() => setPaymentMethod('card')} className={`flex-1 py-3 rounded-lg border flex items-center justify-center gap-2 font-bold text-sm transition-all ${paymentMethod === 'card' ? 'bg-white text-black border-white' : 'bg-[#151921] border-gray-800 text-gray-400'}`}>
-                             <CreditCard size={16}/> Carte Bancaire
+                             <CreditCard size={16}/> Carte (Simulation)
                         </button>
                     </div>
 
@@ -439,7 +424,7 @@ const CartSidebar: React.FC = () => {
                                     style={{ layout: "vertical", color: "gold", shape: "rect", label: "pay" }} 
                                     createOrder={(data, actions) => {
                                         return actions.order.create({
-                                            intent: "CAPTURE", // Correction type string literal
+                                            intent: "CAPTURE",
                                             purchase_units: [{
                                                 amount: { value: finalTotal.toFixed(2), currency_code: "EUR" },
                                                 description: `Commande Manu3D - ${customerInfo.email}`
@@ -453,6 +438,9 @@ const CartSidebar: React.FC = () => {
                                         }
                                     }}
                                 />
+                                <p className="text-center text-[10px] text-gray-500 mt-2">
+                                    💡 Astuce : PayPal permet aussi de payer par Carte Bancaire sans compte.
+                                </p>
                             </PayPalScriptProvider>
                         ) : (
                             <div className="space-y-4">
@@ -476,16 +464,19 @@ const CartSidebar: React.FC = () => {
                                             </div>
                                         </div>
                                     </div>
+                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center rounded-xl z-20">
+                                        <span className="bg-red-900 text-white px-3 py-1 rounded text-xs font-bold border border-red-500">MODE DÉMO (Pas de débit)</span>
+                                    </div>
                                 </div>
                                 <button 
-                                    onClick={() => handleOrderSuccess(`CB-${Date.now()}`, 'Carte Bancaire')}
+                                    onClick={() => handleOrderSuccess(`CB-${Date.now()}`, 'Carte Bancaire (Simulé)')}
                                     disabled={isProcessing}
                                     className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-900/20 flex items-center justify-center gap-2"
                                 >
-                                    {isProcessing ? <Loader2 className="animate-spin" /> : `Payer ${finalTotal.toFixed(2)}€`}
+                                    {isProcessing ? <Loader2 className="animate-spin" /> : `Simuler Paiement ${finalTotal.toFixed(2)}€`}
                                 </button>
                                 <p className="text-center text-[10px] text-gray-400 flex items-center justify-center gap-1">
-                                    <ShieldCheck size={10} /> Paiement 100% Sécurisé via SumUp
+                                    <ShieldCheck size={10} /> Ceci est une démonstration visuelle.
                                 </p>
                             </div>
                         )}
