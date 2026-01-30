@@ -16,8 +16,10 @@ export interface Product {
   category: 'Figurine' | 'Decor' | 'Cosplay' | string;
   price: string; // Format stocké en string "XX.XX€" pour l'affichage, conversion nécessaire pour calculs
   numericPrice?: number; // Nouveau: prix numérique pour calculs
-  image: string;
+  image: string; // Image principale (thumbnail)
+  gallery?: string[]; // Galerie d'images supplémentaires
   description: string;
+  tags?: string[]; // Tags pour filtrage (ex: "Pokémon", "Résine", "Gold")
   isNew?: boolean;
   creatorId?: number;
   weightG?: number;

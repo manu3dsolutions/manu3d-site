@@ -14,10 +14,10 @@ import Location from './components/Location';
 import AdminTool from './components/AdminTool'; 
 import PromoBanner from './components/PromoBanner'; 
 import CartSidebar from './components/CartSidebar';
-import Blog from './components/Blog'; // Nouveau composant
+import Blog from './components/Blog';
 import { LiveContentProvider, useLiveContent } from './LiveContent';
 import { CartProvider } from './contexts/CartContext';
-import { Database, AlertTriangle, CheckCircle, WifiOff } from 'lucide-react';
+import { Database, AlertTriangle, CheckCircle, WifiOff, ArrowUp } from 'lucide-react';
 
 const ConnectionStatus = () => {
   const { usingLive, error, loading } = useLiveContent();
@@ -41,6 +41,31 @@ const ConnectionStatus = () => {
   );
 };
 
+// Scroll To Top Button Component
+const ScrollToTop = () => {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const toggleVisible = () => setVisible(window.scrollY > 400);
+    window.addEventListener('scroll', toggleVisible);
+    return () => window.removeEventListener('scroll', toggleVisible);
+  }, []);
+
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (!visible) return null;
+
+  return (
+    <button 
+      onClick={scrollToTop}
+      className="fixed bottom-4 right-4 z-[90] p-3 bg-white text-black rounded-full shadow-2xl hover:bg-manu-orange transition-all duration-300 hover:-translate-y-1 animate-in fade-in slide-in-from-bottom-5 border border-gray-200"
+      aria-label="Haut de page"
+    >
+      <ArrowUp size={20} strokeWidth={3} />
+    </button>
+  );
+};
+
 function AppContent() {
   const [isLegalOpen, setIsLegalOpen] = useState(false);
   const [legalSection, setLegalSection] = useState('mentions');
@@ -51,7 +76,7 @@ function AppContent() {
 
   useEffect(() => {
     // Log de version pour débogage Vercel
-    console.log("MANU3D BUILD: V2.3 (Blog Added)");
+    console.log("MANU3D BUILD: V2.6 (Ultimate Polish)");
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'a') {
@@ -95,7 +120,9 @@ function AppContent() {
                 </p>
              </div>
              
+             {/* SECTION: DEMANDE MANUELLE (Upload Fichier) */}
              <AtelierRequest />
+             
              <Services />
              <Portfolio />
              <Location />
@@ -143,6 +170,7 @@ function AppContent() {
       <CookieBanner onOpenPrivacy={() => openLegal('privacy')} />
       <AdminTool isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
       <ConnectionStatus />
+      <ScrollToTop />
     </div>
   );
 }

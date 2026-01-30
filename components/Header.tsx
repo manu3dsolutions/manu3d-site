@@ -13,8 +13,18 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
   const { cart, setIsCartOpen } = useCart();
   const { assets } = useLiveContent();
   const [scrolled, setScrolled] = useState(false);
+  const [animateCart, setAnimateCart] = useState(false);
 
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  // Animation du panier au changement de quantité
+  useEffect(() => {
+    if (totalItems > 0) {
+      setAnimateCart(true);
+      const timer = setTimeout(() => setAnimateCart(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [totalItems]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -47,7 +57,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
     <>
       {/* HEADER DESKTOP FLOTTANT (ISLAND) */}
       <nav className={`fixed top-4 left-0 w-full z-50 transition-all duration-500 hidden lg:flex justify-center items-start px-4`}>
-        <div className={`glass-panel rounded-full px-2 py-2 flex items-center gap-2 shadow-2xl transition-all duration-500 ${scrolled ? 'mt-0 bg-[#050505]/90' : 'mt-2'}`}>
+        <div className={`glass-panel rounded-full px-2 py-2 flex items-center gap-2 shadow-2xl transition-all duration-500 ${scrolled ? 'mt-0 bg-[#050505]/90 border-white/5' : 'mt-2 border-white/10'}`}>
             
             {/* Logo */}
             <div 
@@ -73,11 +83,11 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
             {/* Cart & Actions */}
             <button 
               onClick={() => setIsCartOpen(true)}
-              className="relative w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center transition-colors group"
+              className={`relative w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center transition-all duration-300 group ${animateCart ? 'bg-manu-orange/20 scale-110' : ''}`}
             >
-               <ShoppingBag size={18} className="text-gray-300 group-hover:text-white" />
+               <ShoppingBag size={18} className={`transition-colors duration-300 ${animateCart ? 'text-manu-orange' : 'text-gray-300 group-hover:text-white'}`} />
                {totalItems > 0 && (
-                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-manu-orange text-black text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-black">
+                 <span className={`absolute -top-1 -right-1 w-5 h-5 bg-manu-orange text-black text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-black transition-transform duration-300 ${animateCart ? 'scale-125' : 'scale-100'}`}>
                    {totalItems}
                  </span>
                )}
@@ -92,7 +102,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
       </nav>
 
       {/* HEADER MOBILE (SIMPLE & EFFICACE) */}
-      <nav className="fixed top-0 left-0 w-full z-50 lg:hidden glass-panel border-b border-white/5">
+      <nav className="fixed top-0 left-0 w-full z-50 lg:hidden glass-panel border-b border-white/5 bg-[#050505]/95 backdrop-blur-md">
          <div className="flex justify-between items-center px-4 h-16">
             <div onClick={() => handleNav('home')} className="flex items-center gap-2">
                <img src={assets.logo} className="h-8 w-auto" alt="Logo" />
@@ -100,8 +110,8 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
             </div>
 
             <div className="flex items-center gap-4">
-               <button onClick={() => setIsCartOpen(true)} className="relative text-white">
-                  <ShoppingBag size={24} />
+               <button onClick={() => setIsCartOpen(true)} className={`relative text-white transition-transform ${animateCart ? 'scale-110' : ''}`}>
+                  <ShoppingBag size={24} className={animateCart ? 'text-manu-orange' : ''} />
                   {totalItems > 0 && (
                      <span className="absolute -top-2 -right-2 w-4 h-4 bg-manu-orange text-black text-[10px] font-bold rounded-full flex items-center justify-center">
                        {totalItems}

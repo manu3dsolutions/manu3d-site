@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, MapPin, Instagram, Facebook, Shield, Settings } from 'lucide-react';
+import { Mail, MapPin, Instagram, Facebook, Shield, Settings, Truck, Lock, Headphones, Sparkles, CreditCard } from 'lucide-react';
 import { CONTACT_INFO } from '../constants';
 import { useLiveContent } from '../LiveContent';
 
@@ -10,9 +10,60 @@ interface ContactProps {
 
 const Contact: React.FC<ContactProps> = ({ onOpenLegal, onOpenAdmin }) => {
   const { assets } = useLiveContent();
+  const [logoError, setLogoError] = React.useState(false);
   
   return (
-    <footer id="contact" className="bg-black text-white border-t border-gray-800">
+    <footer id="contact" className="bg-black text-white border-t border-gray-800 relative z-10">
+      
+      {/* --- TRUST BAR (REASSURANCE) --- */}
+      <div className="border-b border-gray-800 bg-[#0F1115]">
+         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+               
+               <div className="flex items-center gap-4 group">
+                  <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform duration-300">
+                     <Truck size={24} />
+                  </div>
+                  <div>
+                     <h4 className="font-bold text-white text-sm uppercase tracking-wide">Expédition Blindée</h4>
+                     <p className="text-gray-400 text-xs">Emballage anti-casse garanti.</p>
+                  </div>
+               </div>
+
+               <div className="flex items-center gap-4 group">
+                  <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform duration-300">
+                     <Lock size={24} />
+                  </div>
+                  <div>
+                     <h4 className="font-bold text-white text-sm uppercase tracking-wide">Paiement Sécurisé</h4>
+                     <p className="text-gray-400 text-xs">CB, PayPal. Données chiffrées.</p>
+                  </div>
+               </div>
+
+               <div className="flex items-center gap-4 group">
+                  <div className="w-12 h-12 rounded-full bg-manu-orange/10 flex items-center justify-center text-manu-orange group-hover:scale-110 transition-transform duration-300">
+                     <Sparkles size={24} />
+                  </div>
+                  <div>
+                     <h4 className="font-bold text-white text-sm uppercase tracking-wide">Finition Artisanale</h4>
+                     <p className="text-gray-400 text-xs">Pas de travail à la chaîne.</p>
+                  </div>
+               </div>
+
+               <div className="flex items-center gap-4 group">
+                  <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform duration-300">
+                     <Headphones size={24} />
+                  </div>
+                  <div>
+                     <h4 className="font-bold text-white text-sm uppercase tracking-wide">Support Français</h4>
+                     <p className="text-gray-400 text-xs">Basé en Normandie (76).</p>
+                  </div>
+               </div>
+
+            </div>
+         </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-24">
           
@@ -20,15 +71,16 @@ const Contact: React.FC<ContactProps> = ({ onOpenLegal, onOpenAdmin }) => {
             {/* Logo Image */}
             <div className="mb-8 group inline-block cursor-pointer">
                <a href="#home" className="block">
-                 <img 
-                   src={assets.logo} 
-                   alt="Manu3D" 
-                   className="h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                   onError={(e) => {
-                     e.currentTarget.style.display = 'none';
-                     e.currentTarget.parentElement!.innerHTML = '<h2 class="text-4xl font-bold font-display tracking-wider text-manu-orange hover:text-white transition-colors glitch" data-text="MANU3D">MANU3D</h2>';
-                   }}
-                 />
+                 {!logoError ? (
+                   <img 
+                     src={assets.logo} 
+                     alt="Manu3D" 
+                     className="h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                     onError={() => setLogoError(true)}
+                   />
+                 ) : (
+                   <h2 className="text-4xl font-bold font-display tracking-wider text-manu-orange hover:text-white transition-colors">MANU3D</h2>
+                 )}
                </a>
             </div>
 
@@ -42,7 +94,7 @@ const Contact: React.FC<ContactProps> = ({ onOpenLegal, onOpenAdmin }) => {
             
             <div className="space-y-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center text-manu-orange">
+                <div className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center text-manu-orange border border-gray-800">
                   <MapPin size={24} />
                 </div>
                 <div>
@@ -52,7 +104,7 @@ const Contact: React.FC<ContactProps> = ({ onOpenLegal, onOpenAdmin }) => {
               </div>
               
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center text-manu-orange">
+                <div className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center text-manu-orange border border-gray-800">
                   <Mail size={24} />
                 </div>
                 <div>
@@ -65,27 +117,15 @@ const Contact: React.FC<ContactProps> = ({ onOpenLegal, onOpenAdmin }) => {
             </div>
 
             <div className="mt-10 flex gap-4">
-              <a 
-                href="#" 
-                className="w-12 h-12 rounded-full bg-[#151921] border border-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gradient-to-tr hover:from-[#fd5949] hover:to-[#d6249f] hover:border-transparent transition-all duration-300 transform hover:scale-110 shadow-lg group"
-                aria-label="Instagram"
-              >
+              <a href="#" className="w-12 h-12 rounded-full bg-[#151921] border border-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gradient-to-tr hover:from-[#fd5949] hover:to-[#d6249f] hover:border-transparent transition-all duration-300 transform hover:scale-110 shadow-lg group">
                 <Instagram size={22} className="transition-transform group-hover:rotate-12" />
               </a>
-              <a 
-                href="#" 
-                className="w-12 h-12 rounded-full bg-[#151921] border border-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1877F2] hover:border-transparent transition-all duration-300 transform hover:scale-110 shadow-lg group"
-                aria-label="Facebook"
-              >
+              <a href="#" className="w-12 h-12 rounded-full bg-[#151921] border border-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1877F2] hover:border-transparent transition-all duration-300 transform hover:scale-110 shadow-lg group">
                 <Facebook size={22} className="transition-transform group-hover:-rotate-12" />
               </a>
             </div>
 
-            {/* Bouton Dédié Documentation Légale */}
-            <button 
-              onClick={() => onOpenLegal('cgv')} 
-              className="mt-12 flex items-center gap-3 px-5 py-3 rounded-lg border border-gray-800 bg-[#151921] text-gray-400 hover:text-white hover:border-manu-orange hover:bg-manu-orange/10 transition-all duration-300 group w-full sm:w-auto"
-            >
+            <button onClick={() => onOpenLegal('cgv')} className="mt-12 flex items-center gap-3 px-5 py-3 rounded-lg border border-gray-800 bg-[#151921] text-gray-400 hover:text-white hover:border-manu-orange hover:bg-manu-orange/10 transition-all duration-300 group w-full sm:w-auto">
               <Shield size={18} className="text-manu-orange group-hover:scale-110 transition-transform" />
               <div className="text-left">
                  <span className="block text-xs font-bold uppercase tracking-wider text-manu-orange">Documents Légaux</span>
@@ -94,7 +134,8 @@ const Contact: React.FC<ContactProps> = ({ onOpenLegal, onOpenAdmin }) => {
             </button>
           </div>
 
-          <div className="bg-gray-900 p-8 rounded-2xl border border-gray-800">
+          <div className="bg-gray-900 p-8 rounded-2xl border border-gray-800 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-manu-orange/5 rounded-full blur-3xl"></div>
             <h3 className="text-2xl font-bold font-display mb-6">Contactez-nous</h3>
             <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
               <div>
@@ -112,7 +153,7 @@ const Contact: React.FC<ContactProps> = ({ onOpenLegal, onOpenAdmin }) => {
               <p className="text-[10px] text-gray-400">
                 En envoyant ce formulaire, vous acceptez que vos données soient utilisées pour traiter votre demande conformément à notre <button onClick={() => onOpenLegal('privacy')} className="text-manu-orange underline hover:text-white">politique de confidentialité</button>.
               </p>
-              <button className="w-full bg-manu-orange text-black font-bold py-4 rounded-lg hover:bg-white transition-colors duration-300 uppercase tracking-wide">
+              <button className="w-full bg-manu-orange text-black font-bold py-4 rounded-lg hover:bg-white transition-colors duration-300 uppercase tracking-wide shadow-lg">
                 Envoyer ma demande
               </button>
             </form>
@@ -129,14 +170,7 @@ const Contact: React.FC<ContactProps> = ({ onOpenLegal, onOpenAdmin }) => {
              <button onClick={() => onOpenLegal('ip')} className="hover:text-manu-orange transition-colors">Propriété Intellectuelle</button>
           </div>
 
-          {/* Bouton Admin Caché en bas à droite */}
-          <button 
-            onClick={onOpenAdmin}
-            className="absolute bottom-0 right-0 p-3 text-gray-600 hover:text-manu-orange transition-colors opacity-70 hover:opacity-100 hover:rotate-90 duration-500"
-            title="Outil Admin"
-          >
-            <Settings size={16} />
-          </button>
+          <button onClick={onOpenAdmin} className="absolute bottom-0 right-0 p-3 text-gray-600 hover:text-manu-orange transition-colors opacity-70 hover:opacity-100 hover:rotate-90 duration-500" title="Outil Admin"><Settings size={16} /></button>
         </div>
       </div>
     </footer>

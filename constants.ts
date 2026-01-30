@@ -114,8 +114,10 @@ export const PRODUCTS: Product[] = [
     category: "Decor",
     price: "24.00€",
     image: "/assets/products/pikachu-bronze.jpg",
+    gallery: ["/assets/products/pikachu-bronze.jpg", "https://picsum.photos/600/600?random=1", "https://picsum.photos/600/600?random=2"],
     description: "Relief mural effet Bronze Antique. Pikachu jaillissant d'une cartouche Gameboy. Design par ABC3D.",
-    isNew: true
+    isNew: true,
+    tags: ["Pokémon", "Retro", "Gameboy", "Résine"]
   },
   {
     id: 102,
@@ -123,7 +125,9 @@ export const PRODUCTS: Product[] = [
     category: "Decor",
     price: "24.00€",
     image: "/assets/products/lugia-bronze.jpg",
-    description: "Le gardien des mers en relief sortant de sa cartouche. Impression résine & finition Or Vieilli. Design ABC3D."
+    gallery: ["/assets/products/lugia-bronze.jpg", "https://picsum.photos/600/600?random=3"],
+    description: "Le gardien des mers en relief sortant de sa cartouche. Impression résine & finition Or Vieilli. Design ABC3D.",
+    tags: ["Pokémon", "Légendaire", "Silver", "Résine"]
   },
   {
     id: 103,
@@ -131,7 +135,8 @@ export const PRODUCTS: Product[] = [
     category: "Decor",
     price: "24.00€",
     image: "/assets/products/hooh-bronze.jpg",
-    description: "L'oiseau légendaire Arc-en-ciel. Sculpture murale détaillée résine 8k, effet bronze. Design ABC3D."
+    description: "L'oiseau légendaire Arc-en-ciel. Sculpture murale détaillée résine 8k, effet bronze. Design ABC3D.",
+    tags: ["Pokémon", "Légendaire", "Gold", "Résine"]
   },
   {
     id: 104,
@@ -139,7 +144,8 @@ export const PRODUCTS: Product[] = [
     category: "Figurine",
     price: "24.00€",
     image: "/assets/products/dragonite-bronze.jpg",
-    description: "Carte en relief effet métal antique. Le dragon original, majestueux et puissant. Design ABC3D."
+    description: "Carte en relief effet métal antique. Le dragon original, majestueux et puissant. Design ABC3D.",
+    tags: ["Pokémon", "Dragon", "Gen 1"]
   },
   {
     id: 105,
@@ -147,7 +153,8 @@ export const PRODUCTS: Product[] = [
     category: "Decor",
     price: "24.00€",
     image: "/assets/products/zapdos-bronze.jpg",
-    description: "L'oiseau de foudre. Cadre relief haute précision, peinture effet bronze. Design ABC3D."
+    description: "L'oiseau de foudre. Cadre relief haute précision, peinture effet bronze. Design ABC3D.",
+    tags: ["Pokémon", "Légendaire", "Gen 1"]
   },
   {
     id: 106,
@@ -155,7 +162,8 @@ export const PRODUCTS: Product[] = [
     category: "Decor",
     price: "24.00€",
     image: "/assets/products/groudon-bronze.jpg",
-    description: "Le titan de la terre brisant sa cartouche. Texture rocailleuse réaliste. Design ABC3D."
+    description: "Le titan de la terre brisant sa cartouche. Texture rocailleuse réaliste. Design ABC3D.",
+    tags: ["Pokémon", "Légendaire", "Gen 3"]
   },
   {
     id: 107,
@@ -163,8 +171,10 @@ export const PRODUCTS: Product[] = [
     category: "Decor",
     price: "24.00€",
     image: "/assets/products/gyarados-bronze.jpg",
+    gallery: ["/assets/products/gyarados-bronze.jpg", "https://picsum.photos/600/600?random=4", "https://picsum.photos/600/600?random=5"],
     description: "La fureur du dragon d'eau sortant de l'écran. Finition dorée impeccable. Design ABC3D.",
-    isNew: true
+    isNew: true,
+    tags: ["Pokémon", "Eau", "Shiny"]
   },
   {
     id: 108,
@@ -172,7 +182,8 @@ export const PRODUCTS: Product[] = [
     category: "Figurine",
     price: "24.00€",
     image: "/assets/products/butterfree-bronze.jpg",
-    description: "Délicatesse et nostalgie. Carte relief avec patine dorée artisanale. Design ABC3D."
+    description: "Délicatesse et nostalgie. Carte relief avec patine dorée artisanale. Design ABC3D.",
+    tags: ["Pokémon", "Insecte", "Cute"]
   },
   {
     id: 109,
@@ -180,7 +191,8 @@ export const PRODUCTS: Product[] = [
     category: "Figurine",
     price: "24.00€",
     image: "/assets/products/lickitung-bronze.jpg",
-    description: "Une touche d'humour en bronze. Finition lisse et détaillée. Design ABC3D."
+    description: "Une touche d'humour en bronze. Finition lisse et détaillée. Design ABC3D.",
+    tags: ["Pokémon", "Fun"]
   },
   {
     id: 110,
@@ -188,7 +200,8 @@ export const PRODUCTS: Product[] = [
     category: "Figurine",
     price: "24.00€",
     image: "/assets/products/metapod-bronze.jpg",
-    description: "L'armure impénétrable. Carte relief minimaliste et élégante. Design ABC3D."
+    description: "L'armure impénétrable. Carte relief minimaliste et élégante. Design ABC3D.",
+    tags: ["Pokémon", "Mème"]
   },
   {
     id: 111,
@@ -196,7 +209,8 @@ export const PRODUCTS: Product[] = [
     category: "Figurine",
     price: "24.00€",
     image: "/assets/products/caterpie-bronze.jpg",
-    description: "Le début de l'aventure. Sculpture détaillée sur carte bronze. Design ABC3D."
+    description: "Le début de l'aventure. Sculpture détaillée sur carte bronze. Design ABC3D.",
+    tags: ["Pokémon", "Nature"]
   }
 ];
 

@@ -11,7 +11,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
   const [hoveredSide, setHoveredSide] = useState<'none' | 'left' | 'right'>('none');
 
   return (
-    <div id="home" className="relative h-screen w-full overflow-hidden flex bg-[#050505] pt-16 lg:pt-0">
+    <div id="home" className="relative h-screen w-full overflow-hidden flex flex-col bg-[#050505] pt-16 lg:pt-0">
       
       {/* Background Video Global */}
       <div className="absolute inset-0 z-0">
@@ -26,7 +26,7 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
           </video>
       </div>
 
-      <div className="relative z-20 w-full h-full flex flex-col md:flex-row">
+      <div className="relative z-20 w-full flex-1 flex flex-col md:flex-row">
         
         {/* --- PARTIE GAUCHE : L'ATELIER --- */}
         <div 
@@ -92,14 +92,27 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
 
       </div>
 
+      {/* MARQUEE INFINITE STRIP - FOOTER HERO */}
+      <div className="relative z-30 bg-manu-orange text-black py-2 overflow-hidden border-t border-black/20">
+         <div className="flex animate-[shine_20s_linear_infinite] whitespace-nowrap">
+             {[...Array(10)].map((_, i) => (
+                <div key={i} className="flex items-center gap-8 mx-4 font-display font-bold text-sm tracking-widest uppercase">
+                    <span>Impression 3D Résine 8K</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+                    <span>Peinture Artisanale</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+                    <span>Cosplay Pro Maker</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+                    <span>Expédition Soignée</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+                </div>
+             ))}
+         </div>
+      </div>
+
       {/* Badge Central "VS" Style */}
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none hidden md:flex items-center justify-center w-16 h-16 rounded-full glass-panel border border-white/10 shadow-2xl">
          <span className="font-display font-bold text-gray-400 text-lg">OU</span>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 animate-bounce text-gray-500 hidden md:block">
-         <ChevronDown size={24} />
       </div>
 
     </div>

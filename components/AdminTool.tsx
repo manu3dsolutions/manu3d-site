@@ -106,7 +106,11 @@ const AdminTool: React.FC<AdminToolProps> = ({ isOpen, onClose }) => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.toLowerCase() === 'manu3d') {
+    // Sécurité : On récupère le mot de passe depuis les variables d'environnement
+    const env = (import.meta as any).env || {};
+    const adminPwd = env.VITE_ADMIN_PASSWORD;
+
+    if (adminPwd && password === adminPwd) {
       setIsAuthenticated(true);
       setErrorMsg('');
       fetchCoupons(); 
@@ -145,7 +149,8 @@ const AdminTool: React.FC<AdminToolProps> = ({ isOpen, onClose }) => {
   };
 
   const handleAIGenerate = async (task: string) => {
-    const apiKey = process.env.API_KEY;
+    const env = (import.meta as any).env || {};
+    const apiKey = env.API_KEY;
     if(!apiKey || apiKey === 'PLACEHOLDER_API_KEY' || apiKey === '') {
         alert("⛔ Clé API Gemini Manquante !");
         return;

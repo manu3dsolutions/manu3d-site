@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Trash2, Plus, Minus, ShoppingBag, Truck, CheckCircle, AlertCircle, Package, Store, Ticket, Loader2, FileText, Download, Printer, Phone, MapPin, CreditCard, Mail, ArrowLeft, ArrowRight, Smartphone, ShieldCheck, Weight } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ShoppingBag, Truck, CheckCircle, AlertCircle, Package, Store, Ticket, Loader2, FileText, Smartphone, ShieldCheck, Weight, CreditCard, ArrowLeft, ArrowRight, FileCheck, Gift } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useLiveContent } from '../LiveContent';
 import { supabase } from '../supabaseClient';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import LegalDocs from './LegalDocs';
 
-// ID Client PayPal récupéré depuis le fichier .env
-// Si pas défini, on utilise "test" (Sandbox)
-const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID || "test";
+// Sécurisation de l'accès aux variables d'environnement
+const env = (import.meta as any).env || {};
+const PAYPAL_CLIENT_ID = env.VITE_PAYPAL_CLIENT_ID || "test";
+const IS_PRODUCTION = PAYPAL_CLIENT_ID !== "test";
 
 const CartSidebar: React.FC = () => {
   const { 
@@ -20,7 +22,6 @@ const CartSidebar: React.FC = () => {
   const { shippingMethods, siteConfig } = useLiveContent();
   
   // --- ETAPES DU TUNNEL ---
-  // 'cart' -> 'details' (Adresse/Tel) -> 'shipping' (Choix transporteur) -> 'payment' -> 'success'
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'details' | 'shipping' | 'payment' | 'success'>('cart');
   
   // --- FORMULAIRE CLIENT ---
@@ -40,22 +41,24 @@ const CartSidebar: React.FC = () => {
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponMsg, setCouponMsg] = useState<{type: 'success'|'error', text: string} | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'card'>('paypal');
+  
+  // --- LEGAL ---
+  const [acceptCGV, setAcceptCGV] = useState(false);
+  const [showLegal, setShowLegal] = useState(false); 
 
   // --- LOGIQUE FILTRAGE POIDS ---
   const availableMethods = useMemo(() => {
      return shippingMethods.filter(method => {
          const min = method.minWeight ?? 0;
-         const max = method.maxWeight ?? 100000; // 100kg par défaut si non spécifié
+         const max = method.maxWeight ?? 100000;
          return cartWeight >= min && cartWeight <= max;
      });
   }, [shippingMethods, cartWeight]);
 
-  // Si le mode choisi devient invalide (car le poids a changé), on le désélectionne ou on prend le premier dispo
   useEffect(() => {
      if (checkoutStep === 'shipping' && availableMethods.length > 0) {
          const currentIsValid = shippingMethod && availableMethods.find(m => m.id === shippingMethod.id);
          if (!currentIsValid) {
-             // Sélectionner par défaut le moins cher (souvent le premier si trié par prix)
              setShippingMethod(availableMethods[0]);
          }
      }
@@ -68,32 +71,37 @@ const CartSidebar: React.FC = () => {
      return () => { document.body.style.overflow = 'unset'; }
   }, [isCartOpen]);
 
-  if (!isCartOpen) return null;
+  // --- GAMIFICATION LIVRAISON GRATUITE ---
+  const freeShippingThreshold = siteConfig.shippingFreeThreshold || 100;
+  const remainingForFree = Math.max(0, freeShippingThreshold - cartTotal);
+  const progressPercent = Math.min(100, (cartTotal / freeShippingThreshold) * 100);
 
-  // --- LOGIQUE DE VALIDATION ---
-  
+  if (!isCartOpen) return (
+      <>
+        {showLegal && <LegalDocs isOpen={true} onClose={() => setShowLegal(false)} initialSection="cgv" />}
+      </>
+  );
+
+  // --- VALIDATION ---
   const validateDetails = () => {
       const { name, email, phone, address, city, zip } = customerInfo;
       if (!name.trim() || !email.trim() || !address.trim() || !city.trim() || !zip.trim()) {
           setErrorMsg("Tous les champs marqués d'une * sont obligatoires.");
           return false;
       }
-      // Regex Tel Mobile France (06, 07, +336, +337)
       const phoneRegex = /^(?:(?:\+|00)33|0)[67][0-9]{8}$/;
       if (!phone.trim()) {
-          setErrorMsg("Le numéro de téléphone mobile est obligatoire pour la livraison.");
+          setErrorMsg("Le numéro de téléphone mobile est obligatoire.");
           return false;
       }
       if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
-          setErrorMsg("Merci de renseigner un numéro de mobile valide (06 ou 07) pour le suivi SMS.");
+          setErrorMsg("Numéro mobile invalide (06 ou 07 requis pour le suivi).");
           return false;
       }
-      // Regex Email simple
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           setErrorMsg("L'adresse email semble invalide.");
           return false;
       }
-      
       setErrorMsg(null);
       return true;
   };
@@ -104,19 +112,11 @@ const CartSidebar: React.FC = () => {
         setCheckoutStep('details');
     }
     else if (checkoutStep === 'details') {
-        if (validateDetails()) {
-            setCheckoutStep('shipping');
-        }
+        if (validateDetails()) setCheckoutStep('shipping');
     }
     else if (checkoutStep === 'shipping') {
-       if(!shippingMethod) {
-           setErrorMsg('Veuillez choisir un mode de livraison.');
-           return;
-       }
-       if(availableMethods.length === 0) {
-           setErrorMsg('Aucun transporteur disponible pour ce poids.');
-           return;
-       }
+       if(!shippingMethod) { setErrorMsg('Veuillez choisir un mode de livraison.'); return; }
+       if(availableMethods.length === 0) { setErrorMsg('Aucun transporteur disponible.'); return; }
        setErrorMsg(null);
        setCheckoutStep('payment');
     }
@@ -128,7 +128,7 @@ const CartSidebar: React.FC = () => {
       if(checkoutStep === 'payment') setCheckoutStep('shipping');
   };
 
-  // --- LOGIQUE COUPON ---
+  // --- COUPON ---
   const handleApplyCoupon = async () => {
       if(!couponInput.trim()) return;
       setCouponLoading(true);
@@ -143,18 +143,10 @@ const CartSidebar: React.FC = () => {
       }
   };
 
-  // --- GENERATE INVOICE HTML (SIMULATION EMAIL) ---
-  const sendConfirmationEmail = async (orderId: string) => {
-      console.log(`📧 ENVOI EMAIL A ${customerInfo.email}...`);
-      await new Promise(r => setTimeout(r, 1500)); 
-      console.log("✅ EMAIL ENVOYÉ !");
-  };
-
-  // --- FINALISATION COMMANDE ---
+  // --- COMMANDE ---
   const handleOrderSuccess = async (transactionId: string, method: string) => {
       setIsProcessing(true);
       try {
-          // 1. Sauvegarde BDD
           const orderData = {
               customer_name: customerInfo.name,
               customer_email: customerInfo.email,
@@ -169,37 +161,26 @@ const CartSidebar: React.FC = () => {
           };
           
           const { data, error } = await supabase.from('orders').insert(orderData).select();
-          
           if (error) console.error("Erreur BDD:", error);
-
-          const orderId = data ? data[0].id : transactionId.slice(-6);
-
-          // 2. Envoi Email
-          await sendConfirmationEmail(String(orderId));
-
-          // 3. UI Success
+          
           setCheckoutStep('success');
           clearCart();
-
+          setAcceptCGV(false);
       } catch (err) {
-          console.error("Erreur critique:", err);
+          console.error(err);
           alert("Erreur lors de l'enregistrement. Contactez-nous.");
       } finally {
           setIsProcessing(false);
       }
   };
 
-  // --- CONTENU RENDU ---
-  
   return (
+    <>
+    <LegalDocs isOpen={showLegal} onClose={() => setShowLegal(false)} initialSection="cgv" />
+    
     <div className="fixed inset-0 z-[100] flex justify-end">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
-        onClick={() => setIsCartOpen(false)}
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setIsCartOpen(false)} />
 
-      {/* Sidebar Panel */}
       <div className="relative w-full max-w-md h-full bg-[#0F1216] border-l border-gray-800 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
         
         {/* Header */}
@@ -213,11 +194,29 @@ const CartSidebar: React.FC = () => {
             {checkoutStep === 'success' && 'Commande Validée'}
           </h2>
           {checkoutStep !== 'success' && (
-              <button onClick={() => setIsCartOpen(false)} className="text-gray-400 hover:text-white transition-colors">
-                <X size={24} />
-              </button>
+              <button onClick={() => setIsCartOpen(false)} className="text-gray-400 hover:text-white transition-colors"><X size={24} /></button>
           )}
         </div>
+        
+        {/* FREE SHIPPING PROGRESS BAR */}
+        {checkoutStep === 'cart' && cart.length > 0 && (
+            <div className="bg-[#151921] p-4 border-b border-gray-800">
+               {remainingForFree > 0 ? (
+                   <div className="space-y-2">
+                       <p className="text-xs text-gray-400">
+                           Plus que <span className="text-manu-orange font-bold">{remainingForFree.toFixed(2)}€</span> pour la livraison offerte !
+                       </p>
+                       <div className="h-2 w-full bg-gray-700 rounded-full overflow-hidden">
+                           <div className="h-full bg-gradient-to-r from-orange-500 to-yellow-400 transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
+                       </div>
+                   </div>
+               ) : (
+                   <div className="flex items-center gap-2 text-green-500 text-sm font-bold bg-green-500/10 p-2 rounded-lg border border-green-500/20">
+                       <Gift size={16} className="animate-bounce" /> Livraison OFFERTE sur cette commande !
+                   </div>
+               )}
+            </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-5 relative">
@@ -244,15 +243,11 @@ const CartSidebar: React.FC = () => {
                                             <button onClick={() => removeFromCart(item.id)} className="text-gray-600 hover:text-red-500 transition-colors p-1"><Trash2 size={16}/></button>
                                         </div>
                                         {item.type === 'custom' && (
-                                            <div className="text-[10px] text-purple-400 mb-1 flex items-center gap-1">
-                                                <FileText size={10}/> Projet Sur-Mesure
-                                            </div>
+                                            <div className="text-[10px] text-purple-400 mb-1 flex items-center gap-1"><FileText size={10}/> Projet Sur-Mesure</div>
                                         )}
                                         <div className="text-xs text-gray-400 mb-2">{item.category}</div>
                                         <div className="flex justify-between items-end">
-                                            <div className="font-bold text-manu-orange">
-                                                {(item.numericPrice || parseFloat(item.price.replace('€',''))).toFixed(2)}€
-                                            </div>
+                                            <div className="font-bold text-manu-orange">{(item.numericPrice || parseFloat(item.price.replace('€',''))).toFixed(2)}€</div>
                                             <div className="flex items-center gap-3 bg-black rounded-lg px-2 py-1 border border-gray-800">
                                                 <button onClick={() => updateQuantity(item.id, -1)} disabled={item.quantity <= 1} className="text-gray-400 hover:text-white disabled:opacity-30"><Minus size={12}/></button>
                                                 <span className="text-xs font-bold text-white w-4 text-center">{item.quantity}</span>
@@ -263,37 +258,23 @@ const CartSidebar: React.FC = () => {
                                 </div>
                             ))}
                             
-                            {/* Poids total indicator */}
                             <div className="flex justify-end text-[10px] text-gray-400 mt-2 gap-1 items-center">
-                                <Weight size={10} />
-                                Poids estimé : {(cartWeight/1000).toFixed(2)} kg
+                                <Weight size={10} /> Poids estimé : {(cartWeight/1000).toFixed(2)} kg
                             </div>
 
-                            {/* Coupon Input in Cart */}
                             <div className="mt-6 pt-6 border-t border-gray-800">
                                 <div className="flex gap-2">
                                     <div className="relative flex-1">
                                         <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-                                        <input 
-                                            type="text" 
-                                            value={couponInput}
-                                            onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                                            placeholder="Code Promo (ex: MANU10)" 
-                                            className="w-full bg-black border border-gray-700 rounded-lg py-2 pl-9 pr-3 text-sm text-white focus:border-manu-orange outline-none uppercase"
-                                        />
+                                        <input type="text" value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())} placeholder="Code Promo (ex: MANU10)" className="w-full bg-black border border-gray-700 rounded-lg py-2 pl-9 pr-3 text-sm text-white focus:border-manu-orange outline-none uppercase" />
                                     </div>
-                                    <button 
-                                        onClick={handleApplyCoupon} 
-                                        disabled={couponLoading || !couponInput}
-                                        className="bg-gray-800 hover:bg-gray-700 text-white px-3 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
-                                    >
+                                    <button onClick={handleApplyCoupon} disabled={couponLoading || !couponInput} className="bg-gray-800 hover:bg-gray-700 text-white px-3 rounded-lg text-xs font-bold transition-colors disabled:opacity-50">
                                         {couponLoading ? <Loader2 className="animate-spin" size={14}/> : 'OK'}
                                     </button>
                                 </div>
                                 {couponMsg && (
                                     <p className={`text-xs mt-2 flex items-center gap-1 ${couponMsg.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
-                                        {couponMsg.type === 'success' ? <CheckCircle size={12}/> : <AlertCircle size={12}/>}
-                                        {couponMsg.text}
+                                        {couponMsg.type === 'success' ? <CheckCircle size={12}/> : <AlertCircle size={12}/>} {couponMsg.text}
                                     </p>
                                 )}
                             </div>
@@ -302,78 +283,47 @@ const CartSidebar: React.FC = () => {
                 </>
             )}
 
-            {/* ETAPE 2 : DETAILS (COORDONNEES) */}
+            {/* ETAPE 2 : DETAILS */}
             {checkoutStep === 'details' && (
                 <div className="space-y-4 animate-in slide-in-from-right duration-300">
                     <div className="bg-blue-900/10 border border-blue-500/20 p-4 rounded-lg flex gap-3 mb-6">
                         <Smartphone className="text-blue-400 flex-shrink-0" size={24} />
                         <div>
                             <h4 className="text-blue-400 font-bold text-sm">Mobile Obligatoire</h4>
-                            <p className="text-xs text-blue-200/70">Pour assurer la livraison et recevoir les notifications SMS du transporteur.</p>
+                            <p className="text-xs text-blue-200/70">Nous envoyons le suivi de colis par SMS.</p>
                         </div>
                     </div>
-
                     <div className="space-y-3">
-                        <div>
-                            <label className="text-xs text-gray-400 font-bold uppercase ml-1">Nom Complet *</label>
-                            <input type="text" value={customerInfo.name} onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="Jean Dupont" />
-                        </div>
-                        <div>
-                            <label className="text-xs text-gray-400 font-bold uppercase ml-1">Email *</label>
-                            <input type="email" value={customerInfo.email} onChange={e => setCustomerInfo({...customerInfo, email: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="jean@email.com" />
-                        </div>
-                        <div>
-                            <label className="text-xs text-manu-orange font-bold uppercase ml-1 flex items-center gap-1"><Smartphone size={10}/> Téléphone Mobile *</label>
-                            <input type="tel" value={customerInfo.phone} onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})} className="w-full bg-[#151921] border border-manu-orange/50 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="06 12 34 56 78" />
-                            <p className="text-[10px] text-gray-400 mt-1 ml-1">Format: 06 ou 07</p>
-                        </div>
-                        <div>
-                            <label className="text-xs text-gray-400 font-bold uppercase ml-1">Adresse (Rue/Voie) *</label>
-                            <input type="text" value={customerInfo.address} onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="10 rue de la Paix" />
-                        </div>
+                        <input type="text" value={customerInfo.name} onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="Nom Complet *" />
+                        <input type="email" value={customerInfo.email} onChange={e => setCustomerInfo({...customerInfo, email: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="Email *" />
+                        <input type="tel" value={customerInfo.phone} onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})} className="w-full bg-[#151921] border border-manu-orange/50 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="Téléphone Mobile (06/07) *" />
+                        <input type="text" value={customerInfo.address} onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="Adresse *" />
                         <div className="flex gap-3">
-                            <div className="w-1/3">
-                                <label className="text-xs text-gray-400 font-bold uppercase ml-1">Code Postal *</label>
-                                <input type="text" value={customerInfo.zip} onChange={e => setCustomerInfo({...customerInfo, zip: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="75000" />
-                            </div>
-                            <div className="flex-1">
-                                <label className="text-xs text-gray-400 font-bold uppercase ml-1">Ville *</label>
-                                <input type="text" value={customerInfo.city} onChange={e => setCustomerInfo({...customerInfo, city: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="Paris" />
-                            </div>
+                            <input type="text" value={customerInfo.zip} onChange={e => setCustomerInfo({...customerInfo, zip: e.target.value})} className="w-1/3 bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="CP *" />
+                            <input type="text" value={customerInfo.city} onChange={e => setCustomerInfo({...customerInfo, city: e.target.value})} className="flex-1 bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="Ville *" />
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ETAPE 3 : SHIPPING (FILTRÉ PAR POIDS) */}
+            {/* ETAPE 3 : LIVRAISON */}
             {checkoutStep === 'shipping' && (
                 <div className="space-y-4 animate-in slide-in-from-right duration-300">
-                    <p className="text-sm text-gray-400 mb-4">Adresse de livraison : <span className="text-white font-bold">{customerInfo.city} ({customerInfo.zip})</span></p>
-                    
-                    {/* Badge Poids */}
-                    <div className="flex justify-between items-center bg-gray-900/50 p-2 rounded text-xs text-gray-400 border border-gray-800 mb-4">
-                        <span>Poids total du colis :</span>
-                        <span className="font-bold text-white">{(cartWeight/1000).toFixed(2)} kg</span>
-                    </div>
-
+                    <p className="text-sm text-gray-400 mb-4">Livraison à : <span className="text-white font-bold">{customerInfo.city} ({customerInfo.zip})</span></p>
                     {availableMethods.length > 0 ? availableMethods.map((method) => {
                         const cost = (method.basePrice + (cartWeight/1000 * method.pricePerKg));
                         const isFree = isFreeShipping && !method.isPickup; 
                         const finalCost = isFree ? 0 : cost;
 
                         return (
-                            <div 
-                                key={method.id} 
-                                onClick={() => setShippingMethod(method)}
-                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${shippingMethod?.id === method.id ? 'border-manu-orange bg-manu-orange/5' : 'border-gray-800 bg-[#151921] hover:border-gray-600'}`}
-                            >
+                            <div key={method.id} onClick={() => setShippingMethod(method)} className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${shippingMethod?.id === method.id ? 'border-manu-orange bg-manu-orange/5' : 'border-gray-800 bg-[#151921] hover:border-gray-600'}`}>
                                 <div className={`p-2 rounded-full ${shippingMethod?.id === method.id ? 'bg-manu-orange text-black' : 'bg-gray-800 text-gray-400'}`}>
                                     {method.isPickup ? <Store size={20}/> : <Truck size={20}/>}
                                 </div>
                                 <div className="flex-1">
                                     <h4 className="font-bold text-white text-sm">{method.name}</h4>
                                     <p className="text-xs text-gray-400">{method.description}</p>
-                                    <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><Package size={10}/> Délai estimé : {method.estimatedDays}</p>
+                                    <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><Package size={10}/> Délai : {method.estimatedDays}</p>
                                 </div>
                                 <div className="font-bold text-manu-orange text-sm">
                                     {method.isPickup ? 'Gratuit' : (isFree ? <span className="text-green-500">Offert</span> : `${finalCost.toFixed(2)}€`)}
@@ -383,12 +333,8 @@ const CartSidebar: React.FC = () => {
                     }) : (
                         <div className="text-center p-6 border border-red-900/50 bg-red-900/10 rounded-xl">
                             <AlertCircle size={32} className="mx-auto text-red-500 mb-2" />
-                            <h4 className="text-white font-bold mb-1">Colis Volumineux</h4>
-                            <p className="text-xs text-gray-400">
-                                Aucun transporteur standard ne peut prendre en charge ce poids ({(cartWeight/1000).toFixed(2)}kg).<br/>
-                                Veuillez nous contacter pour un devis sur mesure ou alléger votre panier.
-                            </p>
-                            <button onClick={() => setCheckoutStep('cart')} className="mt-4 text-xs font-bold text-manu-orange underline">Modifier mon panier</button>
+                            <h4 className="text-white font-bold mb-1">Colis Hors Gabarit</h4>
+                            <p className="text-xs text-gray-400">Poids excessif ({(cartWeight/1000).toFixed(2)}kg). Contactez-nous pour un devis.</p>
                         </div>
                     )}
                 </div>
@@ -397,87 +343,80 @@ const CartSidebar: React.FC = () => {
             {/* ETAPE 4 : PAIEMENT */}
             {checkoutStep === 'payment' && (
                 <div className="space-y-6 animate-in slide-in-from-right duration-300">
-                    
-                    {/* Récap Rapide */}
                     <div className="bg-[#151921] p-4 rounded-xl border border-gray-800 text-sm space-y-2">
                         <div className="flex justify-between text-gray-400"><span>Sous-total</span><span>{cartTotal.toFixed(2)}€</span></div>
                         {discountAmount > 0 && <div className="flex justify-between text-green-500"><span>Remise</span><span>-{discountAmount.toFixed(2)}€</span></div>}
                         <div className="flex justify-between text-gray-400"><span>Livraison</span><span>{shippingCost.toFixed(2)}€</span></div>
-                        <div className="border-t border-gray-700 pt-2 flex justify-between text-white font-bold text-lg"><span>Total à payer</span><span>{finalTotal.toFixed(2)}€</span></div>
+                        <div className="border-t border-gray-700 pt-2 flex justify-between text-white font-bold text-lg"><span>Total</span><span>{finalTotal.toFixed(2)}€</span></div>
                     </div>
 
-                    {/* Choix Méthode */}
-                    <div className="flex gap-2">
-                        <button onClick={() => setPaymentMethod('paypal')} className={`flex-1 py-3 rounded-lg border flex items-center justify-center gap-2 font-bold text-sm transition-all ${paymentMethod === 'paypal' ? 'bg-[#0070BA] border-[#0070BA] text-white' : 'bg-[#151921] border-gray-800 text-gray-400'}`}>
-                             PayPal / CB
-                        </button>
-                        <button onClick={() => setPaymentMethod('card')} className={`flex-1 py-3 rounded-lg border flex items-center justify-center gap-2 font-bold text-sm transition-all ${paymentMethod === 'card' ? 'bg-white text-black border-white' : 'bg-[#151921] border-gray-800 text-gray-400'}`}>
-                             <CreditCard size={16}/> Carte (Simulation)
-                        </button>
-                    </div>
-
-                    {/* Zone de Paiement Dynamique */}
+                    {/* Zone de Paiement */}
                     <div className="bg-black/30 p-4 rounded-xl border border-gray-800">
-                        {paymentMethod === 'paypal' ? (
-                            <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID, currency: "EUR" }}>
-                                <PayPalButtons 
-                                    style={{ layout: "vertical", color: "gold", shape: "rect", label: "pay" }} 
-                                    createOrder={(data, actions) => {
-                                        return actions.order.create({
-                                            intent: "CAPTURE",
-                                            purchase_units: [{
-                                                amount: { value: finalTotal.toFixed(2), currency_code: "EUR" },
-                                                description: `Commande Manu3D - ${customerInfo.email}`
-                                            }]
-                                        });
-                                    }}
-                                    onApprove={async (data, actions) => {
-                                        if (actions.order) {
-                                            const details = await actions.order.capture();
-                                            handleOrderSuccess(details.id || 'PAYPAL_ID', 'PayPal');
-                                        }
-                                    }}
+                        
+                        {/* CASE CGV OBLIGATOIRE - LOI FRANCE */}
+                        <div className="mb-6 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                            <label className="flex items-start gap-3 cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    checked={acceptCGV} 
+                                    onChange={(e) => setAcceptCGV(e.target.checked)}
+                                    className="mt-1 w-4 h-4 rounded border-gray-600 bg-gray-800 text-manu-orange focus:ring-manu-orange"
                                 />
-                                <p className="text-center text-[10px] text-gray-500 mt-2">
-                                    💡 Astuce : PayPal permet aussi de payer par Carte Bancaire sans compte.
-                                </p>
-                            </PayPalScriptProvider>
+                                <span className="text-xs text-gray-300">
+                                    J'ai lu et j'accepte les <button onClick={(e) => { e.preventDefault(); setShowLegal(true); }} className="text-manu-orange underline font-bold">Conditions Générales de Vente</button>. <br/>
+                                    <span className="text-[10px] text-gray-500">En validant ma commande, je reconnais mon obligation de paiement.</span>
+                                </span>
+                            </label>
+                        </div>
+
+                        {paymentMethod === 'paypal' ? (
+                            <div className={`${!acceptCGV ? 'opacity-50 pointer-events-none grayscale' : ''} transition-all`}>
+                                <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID, currency: "EUR" }}>
+                                    <PayPalButtons 
+                                        style={{ layout: "vertical", color: "gold", shape: "rect", label: "pay" }} 
+                                        disabled={!acceptCGV}
+                                        createOrder={(data, actions) => {
+                                            return actions.order.create({
+                                                intent: "CAPTURE",
+                                                purchase_units: [{
+                                                    amount: { value: finalTotal.toFixed(2), currency_code: "EUR" },
+                                                    description: `Manu3D - ${customerInfo.email}`
+                                                }]
+                                            });
+                                        }}
+                                        onApprove={async (data, actions) => {
+                                            if (actions.order) {
+                                                const details = await actions.order.capture();
+                                                handleOrderSuccess(details.id || 'PAYPAL_ID', 'PayPal');
+                                            }
+                                        }}
+                                    />
+                                    <p className="text-center text-[10px] text-gray-500 mt-2 flex items-center justify-center gap-1">
+                                        <ShieldCheck size={10}/> Paiement sécurisé par PayPal (Compte ou Carte Bancaire)
+                                    </p>
+                                </PayPalScriptProvider>
+                            </div>
                         ) : (
-                            <div className="space-y-4">
-                                {/* Simulation Formulaire SumUp / Stripe */}
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl transform rotate-1"></div>
-                                    <div className="relative bg-[#1a1d24] p-4 rounded-xl border border-gray-700 shadow-xl">
-                                        <div className="flex justify-between items-center mb-6">
-                                            <span className="text-gray-400 text-xs uppercase tracking-widest">Card Number</span>
-                                            <CreditCard className="text-manu-orange" size={20}/>
-                                        </div>
-                                        <input type="text" placeholder="0000 0000 0000 0000" className="w-full bg-black/50 border border-gray-600 rounded p-2 text-white font-mono mb-4 focus:border-manu-orange outline-none" />
-                                        <div className="flex gap-3">
-                                            <div className="flex-1">
-                                                <label className="text-[10px] text-gray-400 uppercase">Expiry</label>
-                                                <input type="text" placeholder="MM/YY" className="w-full bg-black/50 border border-gray-600 rounded p-2 text-white font-mono focus:border-manu-orange outline-none" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <label className="text-[10px] text-gray-400 uppercase">CVC</label>
-                                                <input type="text" placeholder="123" className="w-full bg-black/50 border border-gray-600 rounded p-2 text-white font-mono focus:border-manu-orange outline-none" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center rounded-xl z-20">
-                                        <span className="bg-red-900 text-white px-3 py-1 rounded text-xs font-bold border border-red-500">MODE DÉMO (Pas de débit)</span>
-                                    </div>
+                            /* Simulation UNIQUEMENT visible si on n'est PAS en PROD */
+                            !IS_PRODUCTION && (
+                                <div className="space-y-4">
+                                    <div className="bg-red-900/20 border border-red-500 text-red-500 p-2 text-center text-xs font-bold rounded">MODE DÉMO UNIQUEMENT</div>
+                                    <button 
+                                        onClick={() => handleOrderSuccess(`CB-TEST-${Date.now()}`, 'Carte Test')}
+                                        disabled={isProcessing || !acceptCGV}
+                                        className={`w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-lg ${!acceptCGV ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        {isProcessing ? <Loader2 className="animate-spin" /> : `Simuler Validation`}
+                                    </button>
                                 </div>
-                                <button 
-                                    onClick={() => handleOrderSuccess(`CB-${Date.now()}`, 'Carte Bancaire (Simulé)')}
-                                    disabled={isProcessing}
-                                    className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-900/20 flex items-center justify-center gap-2"
-                                >
-                                    {isProcessing ? <Loader2 className="animate-spin" /> : `Simuler Paiement ${finalTotal.toFixed(2)}€`}
-                                </button>
-                                <p className="text-center text-[10px] text-gray-400 flex items-center justify-center gap-1">
-                                    <ShieldCheck size={10} /> Ceci est une démonstration visuelle.
-                                </p>
+                            )
+                        )}
+                        
+                        {/* Switcher pour DEV seulement */}
+                        {!IS_PRODUCTION && (
+                            <div className="mt-4 flex gap-2 justify-center">
+                                <button onClick={() => setPaymentMethod('paypal')} className={`text-xs px-2 py-1 rounded ${paymentMethod === 'paypal' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`}>PayPal</button>
+                                <button onClick={() => setPaymentMethod('card')} className={`text-xs px-2 py-1 rounded ${paymentMethod === 'card' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`}>Simulation</button>
                             </div>
                         )}
                     </div>
@@ -487,64 +426,34 @@ const CartSidebar: React.FC = () => {
             {/* ETAPE 5 : SUCCES */}
             {checkoutStep === 'success' && (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-6 animate-in zoom-in duration-500">
-                    <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center text-green-500 shadow-[0_0_30px_rgba(34,197,94,0.3)]">
-                        <CheckCircle size={48} />
-                    </div>
+                    <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center text-green-500 shadow-[0_0_30px_rgba(34,197,94,0.3)]"><CheckCircle size={48} /></div>
                     <div>
                         <h3 className="text-2xl font-bold text-white mb-2 font-display">Commande Validée !</h3>
-                        <p className="text-gray-400">Merci {customerInfo.name}.</p>
-                        <p className="text-sm text-gray-400 mt-2">Un email de confirmation (facture) vient d'être envoyé à <br/><span className="text-white">{customerInfo.email}</span></p>
+                        <p className="text-gray-400">Merci {customerInfo.name}. Vous recevrez un email de confirmation.</p>
                     </div>
-                    <div className="bg-[#151921] p-4 rounded-xl border border-gray-800 w-full text-left">
-                        <p className="text-xs text-gray-400 uppercase mb-2">Prochaines étapes</p>
-                        <ul className="space-y-2 text-sm text-gray-300">
-                            <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500"/> Validation Paiement</li>
-                            <li className="flex items-center gap-2"><Loader2 size={14} className="text-manu-orange animate-spin-slow"/> Préparation en Atelier</li>
-                            <li className="flex items-center gap-2"><Truck size={14} className="text-gray-500"/> Expédition ({shippingMethod?.name})</li>
-                        </ul>
-                    </div>
-                    <button onClick={() => setIsCartOpen(false)} className="bg-manu-orange text-black font-bold px-8 py-3 rounded-full hover:bg-white transition-colors">
-                        Retour à la boutique
-                    </button>
+                    <button onClick={() => setIsCartOpen(false)} className="bg-manu-orange text-black font-bold px-8 py-3 rounded-full hover:bg-white transition-colors">Retour à la boutique</button>
                 </div>
             )}
         </div>
 
-        {/* Footer (Actions) - Masqué si succès ou vide */}
+        {/* Footer Actions */}
         {checkoutStep !== 'success' && cart.length > 0 && (
             <div className="p-5 border-t border-gray-800 bg-[#0B0D10]">
-                {/* Total Row (Only relevant if not in Payment step where detailed summary is shown) */}
                 {checkoutStep !== 'payment' && (
                     <div className="flex justify-between items-end mb-4">
                         <span className="text-gray-400 text-sm">Total estimé</span>
-                        <span className="text-2xl font-bold text-white font-display">
-                            {checkoutStep === 'cart' ? cartTotal.toFixed(2) : finalTotal.toFixed(2)}€
-                        </span>
+                        <span className="text-2xl font-bold text-white font-display">{checkoutStep === 'cart' ? cartTotal.toFixed(2) : finalTotal.toFixed(2)}€</span>
                     </div>
                 )}
-                
-                {/* Error Message */}
-                {errorMsg && (
-                    <div className="bg-red-900/20 border border-red-500/30 p-3 rounded-lg mb-4 flex items-start gap-2 text-red-400 text-xs">
-                        <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
-                        <span>{errorMsg}</span>
-                    </div>
-                )}
-
+                {errorMsg && <div className="bg-red-900/20 border border-red-500/30 p-3 rounded-lg mb-4 text-red-400 text-xs flex gap-2"><AlertCircle size={14}/> {errorMsg}</div>}
                 <div className="flex gap-3">
                     {checkoutStep !== 'cart' && (
-                        <button 
-                            onClick={handleBackStep}
-                            className="px-4 py-3 rounded-xl border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-                        >
-                            <ArrowLeft size={20} />
-                        </button>
+                        <button onClick={handleBackStep} className="px-4 py-3 rounded-xl border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800"><ArrowLeft size={20} /></button>
                     )}
-                    
                     {checkoutStep !== 'payment' && (
                         <button 
                             onClick={handleNextStep}
-                            className={`flex-1 bg-manu-orange text-black font-bold py-3 rounded-xl hover:bg-white transition-colors flex items-center justify-center gap-2 shadow-lg shadow-manu-orange/20 ${checkoutStep === 'shipping' && availableMethods.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`flex-1 bg-manu-orange text-black font-bold py-3 rounded-xl hover:bg-white transition-colors flex items-center justify-center gap-2 ${checkoutStep === 'shipping' && availableMethods.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                             disabled={checkoutStep === 'shipping' && availableMethods.length === 0}
                         >
                             {checkoutStep === 'cart' && 'Commander'}
@@ -556,9 +465,9 @@ const CartSidebar: React.FC = () => {
                 </div>
             </div>
         )}
-
       </div>
     </div>
+    </>
   );
 };
 
