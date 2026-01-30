@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Trash2, Plus, Minus, ShoppingBag, Truck, CheckCircle, AlertCircle, Package, Store, Ticket, Loader2, FileText, Download, Printer, Phone, MapPin, CreditCard, Mail, ArrowLeft, ArrowRight, Smartphone, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, Trash2, Plus, Minus, ShoppingBag, Truck, CheckCircle, AlertCircle, Package, Store, Ticket, Loader2, FileText, Download, Printer, Phone, MapPin, CreditCard, Mail, ArrowLeft, ArrowRight, Smartphone, ShieldCheck, Weight } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useLiveContent } from '../LiveContent';
 import { supabase } from '../supabaseClient';
@@ -39,6 +39,27 @@ const CartSidebar: React.FC = () => {
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponMsg, setCouponMsg] = useState<{type: 'success'|'error', text: string} | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'card'>('paypal');
+
+  // --- LOGIQUE FILTRAGE POIDS ---
+  const availableMethods = useMemo(() => {
+     return shippingMethods.filter(method => {
+         const min = method.minWeight ?? 0;
+         const max = method.maxWeight ?? 100000; // 100kg par défaut si non spécifié
+         return cartWeight >= min && cartWeight <= max;
+     });
+  }, [shippingMethods, cartWeight]);
+
+  // Si le mode choisi devient invalide (car le poids a changé), on le désélectionne ou on prend le premier dispo
+  useEffect(() => {
+     if (checkoutStep === 'shipping' && availableMethods.length > 0) {
+         const currentIsValid = shippingMethod && availableMethods.find(m => m.id === shippingMethod.id);
+         if (!currentIsValid) {
+             // Sélectionner par défaut le moins cher (souvent le premier si trié par prix)
+             // On s'assure que 'availableMethods' est trié par prix croissant (normalement fait dans LiveContent)
+             setShippingMethod(availableMethods[0]);
+         }
+     }
+  }, [availableMethods, checkoutStep, shippingMethod, setShippingMethod]);
 
   // Reset scroll on open
   useEffect(() => {
@@ -90,6 +111,10 @@ const CartSidebar: React.FC = () => {
     else if (checkoutStep === 'shipping') {
        if(!shippingMethod) {
            setErrorMsg('Veuillez choisir un mode de livraison.');
+           return;
+       }
+       if(availableMethods.length === 0) {
+           setErrorMsg('Aucun transporteur disponible pour ce poids.');
            return;
        }
        setErrorMsg(null);
@@ -253,6 +278,12 @@ const CartSidebar: React.FC = () => {
                                 </div>
                             ))}
                             
+                            {/* Poids total indicator */}
+                            <div className="flex justify-end text-[10px] text-gray-500 mt-2 gap-1 items-center">
+                                <Weight size={10} />
+                                Poids estimé : {(cartWeight/1000).toFixed(2)} kg
+                            </div>
+
                             {/* Coupon Input in Cart */}
                             <div className="mt-6 pt-6 border-t border-gray-800">
                                 <div className="flex gap-2">
@@ -329,14 +360,20 @@ const CartSidebar: React.FC = () => {
                 </div>
             )}
 
-            {/* ETAPE 3 : SHIPPING */}
+            {/* ETAPE 3 : SHIPPING (FILTRÉ PAR POIDS) */}
             {checkoutStep === 'shipping' && (
                 <div className="space-y-4 animate-in slide-in-from-right duration-300">
                     <p className="text-sm text-gray-400 mb-4">Adresse de livraison : <span className="text-white font-bold">{customerInfo.city} ({customerInfo.zip})</span></p>
                     
-                    {shippingMethods.map((method) => {
+                    {/* Badge Poids */}
+                    <div className="flex justify-between items-center bg-gray-900/50 p-2 rounded text-xs text-gray-500 border border-gray-800 mb-4">
+                        <span>Poids total du colis :</span>
+                        <span className="font-bold text-white">{(cartWeight/1000).toFixed(2)} kg</span>
+                    </div>
+
+                    {availableMethods.length > 0 ? availableMethods.map((method) => {
                         const cost = (method.basePrice + (cartWeight/1000 * method.pricePerKg));
-                        const isFree = isFreeShipping && !method.isPickup; // Gratuit si seuil atteint, sauf si logique spéciale (ici on simplifie)
+                        const isFree = isFreeShipping && !method.isPickup; 
                         const finalCost = isFree ? 0 : cost;
 
                         return (
@@ -358,7 +395,17 @@ const CartSidebar: React.FC = () => {
                                 </div>
                             </div>
                         );
-                    })}
+                    }) : (
+                        <div className="text-center p-6 border border-red-900/50 bg-red-900/10 rounded-xl">
+                            <AlertCircle size={32} className="mx-auto text-red-500 mb-2" />
+                            <h4 className="text-white font-bold mb-1">Colis Volumineux</h4>
+                            <p className="text-xs text-gray-400">
+                                Aucun transporteur standard ne peut prendre en charge ce poids ({(cartWeight/1000).toFixed(2)}kg).<br/>
+                                Veuillez nous contacter pour un devis sur mesure ou alléger votre panier.
+                            </p>
+                            <button onClick={() => setCheckoutStep('cart')} className="mt-4 text-xs font-bold text-manu-orange underline">Modifier mon panier</button>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -506,7 +553,8 @@ const CartSidebar: React.FC = () => {
                     {checkoutStep !== 'payment' && (
                         <button 
                             onClick={handleNextStep}
-                            className="flex-1 bg-manu-orange text-black font-bold py-3 rounded-xl hover:bg-white transition-colors flex items-center justify-center gap-2 shadow-lg shadow-manu-orange/20"
+                            className={`flex-1 bg-manu-orange text-black font-bold py-3 rounded-xl hover:bg-white transition-colors flex items-center justify-center gap-2 shadow-lg shadow-manu-orange/20 ${checkoutStep === 'shipping' && availableMethods.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={checkoutStep === 'shipping' && availableMethods.length === 0}
                         >
                             {checkoutStep === 'cart' && 'Commander'}
                             {checkoutStep === 'details' && 'Vers la Livraison'}
