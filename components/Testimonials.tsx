@@ -6,7 +6,7 @@ const Testimonials: React.FC = () => {
   const { reviews } = useLiveContent();
 
   return (
-    <section className="py-24 bg-[#0B0D10] relative overflow-hidden">
+    <section className="py-24 bg-[#0B0D10] relative overflow-hidden border-t border-gray-800">
       {/* Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-20 w-64 h-64 bg-manu-orange/5 rounded-full blur-3xl"></div>
@@ -17,13 +17,13 @@ const Testimonials: React.FC = () => {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-manu-orange/10 text-manu-orange border border-manu-orange/20 text-xs font-bold uppercase tracking-widest mb-4">
             <User size={14} />
-            Avis Vérifiés
+            Clients Satisfaits
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 font-display">
-            La Parole à la <span className="text-manu-orange">Guilde</span>
+            Avis & <span className="text-manu-orange">Témoignages</span>
           </h2>
           <p className="text-gray-400 max-w-2xl mx-auto text-lg font-light">
-            Ils nous ont fait confiance pour matérialiser leur imaginaire. Découvrez les retours d'expérience de nos clients.
+            Ils nous ont fait confiance pour matérialiser leurs projets. Découvrez leurs retours d'expérience.
           </p>
         </div>
 
@@ -59,7 +59,7 @@ const Testimonials: React.FC = () => {
 
               {review.item && (
                 <div className="absolute bottom-0 right-0 px-4 py-1 bg-black/50 rounded-tl-lg border-t border-l border-gray-800 text-[10px] text-gray-500 font-mono">
-                  Loot : {review.item}
+                  Article : {review.item}
                 </div>
               )}
             </div>

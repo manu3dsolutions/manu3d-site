@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Send, Upload, FileText, CheckCircle, AlertCircle, Loader2, Image as ImageIcon, Box } from 'lucide-react';
+import { Send, Upload, FileText, CheckCircle, AlertCircle, Loader2, Image as ImageIcon, Box, ShieldCheck, Check } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 const AtelierRequest: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // State for mandatory legal checkbox
+  const [legalAccepted, setLegalAccepted] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -19,6 +22,13 @@ const AtelierRequest: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation: Legal Checkbox
+    if (!legalAccepted) {
+        setError("Veuillez accepter les conditions légales de propriété intellectuelle pour continuer.");
+        return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -47,6 +57,7 @@ const AtelierRequest: React.FC = () => {
       setSuccess(true);
       setFormData({ name: '', email: '', type: 'Figurine', description: '', isUrgent: false });
       setFile(null);
+      setLegalAccepted(false);
 
     } catch (err: any) {
       setError("Une erreur est survenue lors de l'envoi. Veuillez réessayer ou nous contacter par email.");
@@ -195,15 +206,41 @@ const AtelierRequest: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Urgent Checkbox */}
                 <div className="flex items-center gap-3">
                    <input 
                      type="checkbox" 
                      id="urgent" 
                      checked={formData.isUrgent}
                      onChange={e => setFormData({...formData, isUrgent: e.target.checked})}
-                     className="w-4 h-4 rounded bg-black border-gray-700 text-manu-orange focus:ring-0"
+                     className="w-4 h-4 rounded bg-black border-gray-700 text-manu-orange focus:ring-0 cursor-pointer"
                    />
-                   <label htmlFor="urgent" className="text-sm text-gray-300 select-none">C'est une demande urgente ⚡</label>
+                   <label htmlFor="urgent" className="text-sm text-gray-300 select-none cursor-pointer">C'est une demande urgente ⚡</label>
+                </div>
+
+                {/* LEGAL CHECKBOX - MANDATORY */}
+                <div className={`p-4 rounded-xl border transition-colors ${legalAccepted ? 'bg-green-900/10 border-green-500/30' : 'bg-gray-900/50 border-gray-700 hover:border-gray-500'}`}>
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                        <div className="relative flex items-center pt-0.5">
+                            <input 
+                                type="checkbox" 
+                                className="peer sr-only"
+                                checked={legalAccepted}
+                                onChange={(e) => setLegalAccepted(e.target.checked)}
+                            />
+                            {/* Custom Checkbox Design */}
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${legalAccepted ? 'bg-manu-orange border-manu-orange text-black' : 'border-gray-500 group-hover:border-gray-300'}`}>
+                                {legalAccepted && <Check size={14} strokeWidth={4} />}
+                            </div>
+                        </div>
+                        <div className="text-xs text-gray-400 select-none group-hover:text-gray-300">
+                            <span className="flex items-center gap-1 font-bold text-white mb-1">
+                                <ShieldCheck size={12} className={legalAccepted ? "text-green-500" : "text-gray-500"} />
+                                Engagement Propriété Intellectuelle
+                            </span>
+                            Je certifie détenir les droits ou licences nécessaires pour l'impression de ce fichier. Je confirme que ma demande ne concerne pas d'armes réelles ou d'objets illégaux.
+                        </div>
+                    </label>
                 </div>
 
                 {error && (
@@ -214,8 +251,12 @@ const AtelierRequest: React.FC = () => {
 
                 <button 
                   type="submit" 
-                  disabled={loading}
-                  className="w-full bg-manu-orange hover:bg-white text-black font-bold py-4 rounded-xl uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(243,156,18,0.3)] disabled:opacity-50 flex items-center justify-center gap-2"
+                  disabled={loading || !legalAccepted}
+                  className={`w-full font-bold py-4 rounded-xl uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${
+                      !legalAccepted 
+                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed opacity-50' 
+                        : 'bg-manu-orange hover:bg-white text-black shadow-[0_0_20px_rgba(243,156,18,0.3)]'
+                  }`}
                 >
                   {loading ? <Loader2 className="animate-spin" /> : <><Send size={18} /> Envoyer ma demande</>}
                 </button>

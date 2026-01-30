@@ -9,7 +9,7 @@ const Location: React.FC = () => {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-manu-orange/10 text-manu-orange border border-manu-orange/20 text-xs font-bold uppercase tracking-widest mb-4">
             <MapPin size={14} />
-            Le QG
+            Localisation
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 font-display">
             Visiter <span className="text-manu-orange">L'Atelier</span>
@@ -62,8 +62,8 @@ const Location: React.FC = () => {
                   <Phone size={20} />
                </div>
                <div>
-                  <h4 className="text-white font-bold text-sm">Besoin d'aide pour trouver ?</h4>
-                  <p className="text-gray-400 text-xs mb-2">Si vous êtes perdu dans le donjon, appelez-nous.</p>
+                  <h4 className="text-white font-bold text-sm">Une question sur l'itinéraire ?</h4>
+                  <p className="text-gray-400 text-xs mb-2">Appelez-nous pour vous guider.</p>
                   <p className="text-white font-mono font-bold">+33 6 00 00 00 00</p>
                </div>
             </div>
@@ -89,7 +89,7 @@ const Location: React.FC = () => {
                      { day: "Lundi", hours: "Fermé" },
                      { day: "Mardi - Vendredi", hours: "10h00 - 19h00" },
                      { day: "Samedi", hours: "14h00 - 18h00" },
-                     { day: "Dimanche", hours: "Fermé (Raid Boss)" },
+                     { day: "Dimanche", hours: "Fermé" },
                    ].map((slot, idx) => (
                      <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-800/50 last:border-0">
                         <span className="text-gray-300 font-medium">{slot.day}</span>

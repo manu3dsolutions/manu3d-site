@@ -1,120 +1,146 @@
-import React, { useState } from 'react';
-import { Menu, X, ShoppingBag, Hammer, Store, Home, Users, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Menu, X, ShoppingBag, Hammer, Store, Home, Users, ArrowRight, BookOpen, Sparkles } from 'lucide-react';
 import { useLiveContent } from '../LiveContent';
 import { useCart } from '../contexts/CartContext';
 
 interface HeaderProps {
-  currentView: 'home' | 'shop' | 'atelier' | 'partners';
-  setView: (view: 'home' | 'shop' | 'atelier' | 'partners') => void;
+  currentView: 'home' | 'shop' | 'atelier' | 'partners' | 'blog';
+  setView: (view: 'home' | 'shop' | 'atelier' | 'partners' | 'blog') => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { cart, setIsCartOpen } = useCart();
   const { assets } = useLiveContent();
+  const [scrolled, setScrolled] = useState(false);
 
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
-  // Styles dynamiques selon la vue active
-  const getLinkStyle = (viewName: string) => {
-    const isActive = currentView === viewName;
-    return `relative px-4 py-2 text-sm font-bold uppercase tracking-wider transition-all duration-300 group flex items-center gap-2 rounded-lg ${
-      isActive 
-        ? 'text-black bg-manu-orange shadow-[0_0_15px_rgba(243,156,18,0.4)]' 
-        : 'text-gray-300 hover:text-white hover:bg-white/5'
-    }`;
-  };
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  const handleNav = (view: 'home' | 'shop' | 'atelier' | 'partners') => {
+  const handleNav = (view: 'home' | 'shop' | 'atelier' | 'partners' | 'blog') => {
     setView(view);
     setIsOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  return (
-    <nav className="fixed w-full z-50 bg-[#0F1216]/95 backdrop-blur-md border-b border-white/5 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          
-          {/* Logo - Retour Accueil */}
-          <div 
-            className="flex-shrink-0 flex items-center gap-2 cursor-pointer group select-none"
-            onClick={() => handleNav('home')}
-          >
-              <img 
-                src={assets.logo} 
-                alt="Manu3D" 
-                className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.parentElement!.innerHTML = '<span class="text-3xl font-bold font-display tracking-wider text-manu-orange hover:text-white transition-colors duration-300">MANU3D</span>';
-                }}
-              />
-          </div>
-          
-          {/* Menu Desktop Central */}
-          <div className="hidden lg:flex items-center bg-black/30 p-1 rounded-xl border border-white/5 gap-1">
-             <button onClick={() => handleNav('home')} className={getLinkStyle('home')}>
-                <Home size={16} /> Accueil
-             </button>
-             <button onClick={() => handleNav('shop')} className={getLinkStyle('shop')}>
-                <Store size={16} /> Boutique
-             </button>
-             <button onClick={() => handleNav('atelier')} className={getLinkStyle('atelier')}>
-                <Hammer size={16} /> L'Atelier (Sur-Mesure)
-             </button>
-             <button onClick={() => handleNav('partners')} className={getLinkStyle('partners')}>
-                <Users size={16} /> Communauté
-             </button>
-          </div>
+  const NavItem = ({ view, icon: Icon, label }: { view: string, icon: any, label: string }) => {
+    const isActive = currentView === view;
+    return (
+      <button 
+        onClick={() => handleNav(view as any)}
+        className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider transition-all duration-300 group overflow-hidden ${
+          isActive ? 'text-black bg-manu-orange' : 'text-gray-400 hover:text-white hover:bg-white/10'
+        }`}
+      >
+        <Icon size={16} className={`relative z-10 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
+        <span className="relative z-10">{label}</span>
+      </button>
+    );
+  };
 
-          {/* Actions Droite */}
-          <div className="flex items-center gap-4">
-              
-              {/* Panier (Toujours visible) */}
-              <button 
-                onClick={() => setIsCartOpen(true)}
-                className={`relative p-2 transition-colors ${totalItems > 0 ? 'text-manu-orange' : 'text-gray-300 hover:text-white'}`}
-              >
+  return (
+    <>
+      {/* HEADER DESKTOP FLOTTANT (ISLAND) */}
+      <nav className={`fixed top-4 left-0 w-full z-50 transition-all duration-500 hidden lg:flex justify-center items-start px-4`}>
+        <div className={`glass-panel rounded-full px-2 py-2 flex items-center gap-2 shadow-2xl transition-all duration-500 ${scrolled ? 'mt-0 bg-[#050505]/90' : 'mt-2'}`}>
+            
+            {/* Logo */}
+            <div 
+              className="w-10 h-10 rounded-full bg-black flex items-center justify-center cursor-pointer hover:rotate-12 transition-transform border border-white/10 ml-1"
+              onClick={() => handleNav('home')}
+            >
+               <img src={assets.logo} className="w-6 h-6 object-contain" alt="M" />
+            </div>
+
+            {/* Separator */}
+            <div className="w-px h-6 bg-white/10 mx-2"></div>
+
+            {/* Menu Items */}
+            <NavItem view="home" icon={Home} label="Accueil" />
+            <NavItem view="shop" icon={Store} label="Boutique" />
+            <NavItem view="atelier" icon={Hammer} label="L'Atelier" />
+            <NavItem view="blog" icon={BookOpen} label="Journal" />
+            <NavItem view="partners" icon={Users} label="Club" />
+
+            {/* Separator */}
+            <div className="w-px h-6 bg-white/10 mx-2"></div>
+
+            {/* Cart & Actions */}
+            <button 
+              onClick={() => setIsCartOpen(true)}
+              className="relative w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center transition-colors group"
+            >
+               <ShoppingBag size={18} className="text-gray-300 group-hover:text-white" />
+               {totalItems > 0 && (
+                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-manu-orange text-black text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-black">
+                   {totalItems}
+                 </span>
+               )}
+            </button>
+
+            <a href="#contact" className="ml-2 px-5 py-2 rounded-full bg-white text-black text-sm font-bold uppercase hover:bg-manu-orange transition-colors flex items-center gap-2">
+               <span>Contact</span>
+               <ArrowRight size={14} />
+            </a>
+
+        </div>
+      </nav>
+
+      {/* HEADER MOBILE (SIMPLE & EFFICACE) */}
+      <nav className="fixed top-0 left-0 w-full z-50 lg:hidden glass-panel border-b border-white/5">
+         <div className="flex justify-between items-center px-4 h-16">
+            <div onClick={() => handleNav('home')} className="flex items-center gap-2">
+               <img src={assets.logo} className="h-8 w-auto" alt="Logo" />
+               <span className="font-display font-bold text-xl tracking-wider text-white">MANU<span className="text-manu-orange">3D</span></span>
+            </div>
+
+            <div className="flex items-center gap-4">
+               <button onClick={() => setIsCartOpen(true)} className="relative text-white">
                   <ShoppingBag size={24} />
                   {totalItems > 0 && (
-                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-manu-orange text-black text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full shadow-lg animate-in zoom-in">
-                      {totalItems}
-                    </span>
-                  )}
-              </button>
+                     <span className="absolute -top-2 -right-2 w-4 h-4 bg-manu-orange text-black text-[10px] font-bold rounded-full flex items-center justify-center">
+                       {totalItems}
+                     </span>
+                   )}
+               </button>
+               <button onClick={() => setIsOpen(!isOpen)} className="text-white">
+                  {isOpen ? <X size={28} /> : <Menu size={28} />}
+               </button>
+            </div>
+         </div>
 
-              {/* Bouton Contact Rapide (Desktop) */}
-              <a href="#contact" className="hidden xl:flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold uppercase tracking-wide border border-white/10 bg-white/5 text-white hover:bg-manu-orange hover:text-black hover:border-manu-orange transition-all">
-                <span>Contact</span>
-                <ArrowRight size={16} />
-              </a>
-
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-manu-orange hover:bg-white/5 focus:outline-none"
-              >
-                {isOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-          </div>
-          
-        </div>
-      </div>
-
-      {/* Menu Mobile Déroulant */}
-      {isOpen && (
-        <div className="lg:hidden bg-[#0F1216] border-b border-gray-800 animate-in slide-in-from-top-5 duration-200">
-          <div className="px-4 pt-4 pb-6 space-y-2">
-            <button onClick={() => handleNav('home')} className="w-full text-left text-gray-300 hover:text-manu-orange hover:bg-white/5 block px-3 py-3 rounded-md text-base font-medium">Accueil</button>
-            <button onClick={() => handleNav('shop')} className="w-full text-left text-gray-300 hover:text-manu-orange hover:bg-white/5 block px-3 py-3 rounded-md text-base font-medium">La Boutique</button>
-            <button onClick={() => handleNav('atelier')} className="w-full text-left text-blue-400 hover:text-white hover:bg-blue-600/20 block px-3 py-3 rounded-md text-base font-bold border-l-2 border-blue-500 pl-4 bg-blue-900/10">Atelier & Devis</button>
-            <button onClick={() => handleNav('partners')} className="w-full text-left text-gray-300 hover:text-manu-orange hover:bg-white/5 block px-3 py-3 rounded-md text-base font-medium">Communauté</button>
-            <a href="#contact" onClick={() => setIsOpen(false)} className="mt-4 block w-full text-center bg-gray-800 text-white font-bold py-3 rounded-lg hover:bg-gray-700">Contact</a>
-          </div>
-        </div>
-      )}
-    </nav>
+         {/* Mobile Menu Dropdown */}
+         {isOpen && (
+            <div className="absolute top-16 left-0 w-full bg-[#050505] border-b border-gray-800 animate-in slide-in-from-top-5">
+               <div className="flex flex-col p-4 space-y-2">
+                  {[
+                    { id: 'home', label: 'Accueil', icon: Home },
+                    { id: 'shop', label: 'Boutique', icon: Store },
+                    { id: 'atelier', label: 'Atelier Sur-Mesure', icon: Hammer },
+                    { id: 'blog', label: 'Le Journal', icon: BookOpen },
+                    { id: 'partners', label: 'Communauté', icon: Users },
+                  ].map((item) => (
+                     <button 
+                        key={item.id}
+                        onClick={() => handleNav(item.id as any)}
+                        className={`flex items-center gap-4 p-4 rounded-xl text-lg font-bold transition-all ${currentView === item.id ? 'bg-manu-orange text-black' : 'bg-white/5 text-gray-300'}`}
+                     >
+                        <item.icon size={20} /> {item.label}
+                     </button>
+                  ))}
+                  <a href="#contact" onClick={() => setIsOpen(false)} className="flex items-center gap-4 p-4 rounded-xl bg-white text-black text-lg font-bold mt-4 justify-center">
+                     Contactez-nous
+                  </a>
+               </div>
+            </div>
+         )}
+      </nav>
+    </>
   );
 };
 
