@@ -7,9 +7,10 @@ import {
   REVIEWS as DEFAULT_REVIEWS,
   PORTFOLIO_ITEMS as DEFAULT_PORTFOLIO,
   ASSETS as DEFAULT_ASSETS,
-  SITE_CONFIG_DEFAULT
+  SITE_CONFIG_DEFAULT,
+  ARTICLES as DEFAULT_ARTICLES
 } from './constants';
-import { Product, Partner, Review, PortfolioItem, Creator, ShippingMethod, GlobalSiteConfig } from './types';
+import { Product, Partner, Review, PortfolioItem, Creator, ShippingMethod, GlobalSiteConfig, Article } from './types';
 import { supabase } from './supabaseClient';
 
 // Types pour le contexte complet
@@ -24,6 +25,7 @@ interface LiveContentContextType {
   creators: Creator[];
   shippingMethods: ShippingMethod[];
   siteConfig: GlobalSiteConfig;
+  articles: Article[];
   loading: boolean;
   usingLive: boolean;
   error: string | null;
@@ -40,6 +42,7 @@ const LiveContentContext = createContext<LiveContentContextType>({
   creators: [],
   shippingMethods: [],
   siteConfig: SITE_CONFIG_DEFAULT,
+  articles: DEFAULT_ARTICLES,
   loading: false,
   usingLive: false,
   error: null
@@ -57,6 +60,7 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [creators, setCreators] = useState<Creator[]>([]);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [siteConfig, setSiteConfig] = useState<GlobalSiteConfig>(SITE_CONFIG_DEFAULT);
+  const [articles, setArticles] = useState<Article[]>(DEFAULT_ARTICLES);
   
   const [loading, setLoading] = useState(false);
   const [usingLive, setUsingLive] = useState(false);
@@ -84,7 +88,8 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
             reviewsRes, 
             portfolioRes,
             creatorsRes,
-            shippingRes
+            shippingRes,
+            // articlesRes // À décommenter quand la table sera créée
         ] = await Promise.all([
             supabase.from('products').select('*').eq('active', true).order('id', { ascending: true }),
             supabase.from('site_config').select('*'),
@@ -237,7 +242,7 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   return (
     <LiveContentContext.Provider value={{ 
-        hero, products, promo, assets, partners, reviews, portfolio, creators, shippingMethods, siteConfig,
+        hero, products, promo, assets, partners, reviews, portfolio, creators, shippingMethods, siteConfig, articles,
         loading, usingLive, error 
     }}>
       {children}

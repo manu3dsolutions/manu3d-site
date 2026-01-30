@@ -40,6 +40,18 @@ export interface PortfolioItem {
   image: string;
 }
 
+export interface Article {
+  id: number;
+  title: string;
+  excerpt: string;
+  category: 'News' | 'Tuto' | 'Bon Plan';
+  image: string;
+  date: string;
+  readTime: string;
+  author: string;
+  slug?: string;
+}
+
 export interface Review {
   id: number;
   name: string;

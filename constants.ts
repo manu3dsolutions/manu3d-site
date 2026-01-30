@@ -1,4 +1,4 @@
-import { Product, Partner, PortfolioItem, GlobalSiteConfig } from './types';
+import { Product, Partner, PortfolioItem, GlobalSiteConfig, Article } from './types';
 
 // --- CONFIGURATION GOOGLE SHEETS (MODE AUTOMATIQUE) ---
 // 1. Crée un Google Sheet
@@ -197,6 +197,49 @@ export const PRODUCTS: Product[] = [
     price: "24.00€",
     image: "/assets/products/caterpie-bronze.jpg",
     description: "Le début de l'aventure. Sculpture détaillée sur carte bronze. Design ABC3D."
+  }
+];
+
+export const ARTICLES: Article[] = [
+  {
+    id: 1,
+    title: "Comment lisser vos impressions PLA ?",
+    excerpt: "Le guide ultime pour faire disparaître les stries d'impression sans perdre les détails. Ponçage, enduit et peinture.",
+    category: "Tuto",
+    image: "https://picsum.photos/600/400?random=20",
+    date: "12 Oct 2024",
+    readTime: "5 min",
+    author: "Manu"
+  },
+  {
+    id: 2,
+    title: "L'arrivée des Résines 12K : Révolution ou Marketing ?",
+    excerpt: "Nous avons testé les dernières machines du marché. La différence est-elle visible à l'œil nu ? Spoiler : Oui, sur les miniatures.",
+    category: "News",
+    image: "https://picsum.photos/600/400?random=21",
+    date: "05 Oct 2024",
+    readTime: "3 min",
+    author: "Manu"
+  },
+  {
+    id: 3,
+    title: "Promo Flash : -20% sur la gamme Pokémon",
+    excerpt: "C'est le moment de compléter votre collection de cartes en relief. Offre valable jusqu'à dimanche minuit.",
+    category: "Bon Plan",
+    image: "https://picsum.photos/600/400?random=22",
+    date: "Aujourd'hui",
+    readTime: "1 min",
+    author: "Team"
+  },
+  {
+    id: 4,
+    title: "Cosplay : Créer une visière transparente",
+    excerpt: "Thermoformage vs Moulage résine. Quelle technique choisir pour votre casque de Daft Punk ou de Halo ?",
+    category: "Tuto",
+    image: "https://picsum.photos/600/400?random=23",
+    date: "28 Sept 2024",
+    readTime: "8 min",
+    author: "Manu"
   }
 ];
 

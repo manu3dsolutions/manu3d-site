@@ -6,7 +6,7 @@ import Partners from './components/Partners';
 import ProductList from './components/ProductList';
 import Contact from './components/Contact';
 import Portfolio from './components/Portfolio';
-import AtelierRequest from './components/AtelierRequest'; // Nouveau composant
+import AtelierRequest from './components/AtelierRequest'; 
 import LegalDocs from './components/LegalDocs';
 import CookieBanner from './components/CookieBanner';
 import Testimonials from './components/Testimonials';
@@ -14,6 +14,7 @@ import Location from './components/Location';
 import AdminTool from './components/AdminTool'; 
 import PromoBanner from './components/PromoBanner'; 
 import CartSidebar from './components/CartSidebar';
+import Blog from './components/Blog'; // Nouveau composant
 import { LiveContentProvider, useLiveContent } from './LiveContent';
 import { CartProvider } from './contexts/CartContext';
 import { Database, AlertTriangle, CheckCircle, WifiOff } from 'lucide-react';
@@ -45,12 +46,12 @@ function AppContent() {
   const [legalSection, setLegalSection] = useState('mentions');
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   
-  // NAVIGATION SIMPLIFIÉE : 'custom' supprimé
-  const [currentView, setCurrentView] = useState<'home' | 'shop' | 'atelier' | 'partners'>('home');
+  // NAVIGATION : ajout de 'blog'
+  const [currentView, setCurrentView] = useState<'home' | 'shop' | 'atelier' | 'partners' | 'blog'>('home');
 
   useEffect(() => {
     // Log de version pour débogage Vercel
-    console.log("MANU3D BUILD: V2.1 (Atelier Request Form - No Configurator)");
+    console.log("MANU3D BUILD: V2.3 (Blog Added)");
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'a') {
@@ -81,7 +82,7 @@ function AppContent() {
           <Hero setView={setCurrentView} />
         )}
 
-        {/* VIEW: ATELIER (Complet : Showcase + Formulaire de demande) */}
+        {/* VIEW: ATELIER */}
         {currentView === 'atelier' && (
           <div className="animate-in fade-in duration-500 pt-20">
              <div className="bg-[#0F1216] border-b border-gray-800 py-16 px-4 text-center relative overflow-hidden">
@@ -94,12 +95,9 @@ function AppContent() {
                 </p>
              </div>
              
-             {/* Le formulaire de demande est maintenant prioritaire en haut de l'Atelier */}
              <AtelierRequest />
-
              <Services />
              <Portfolio />
-             <Testimonials />
              <Location />
           </div>
         )}
@@ -111,7 +109,14 @@ function AppContent() {
           </div>
         )}
 
-        {/* VIEW: PARTNERS */}
+        {/* VIEW: BLOG (Le Journal) */}
+        {currentView === 'blog' && (
+          <div className="animate-in fade-in duration-500">
+              <Blog />
+          </div>
+        )}
+
+        {/* VIEW: PARTNERS (COMMUNAUTE) */}
         {currentView === 'partners' && (
           <div className="animate-in fade-in duration-500 pt-20">
               <div className="bg-[#0F1216] border-b border-gray-800 py-12 px-4 text-center">
@@ -119,10 +124,11 @@ function AppContent() {
                    La <span className="text-manu-orange">Communauté</span>
                  </h1>
                  <p className="text-gray-400 max-w-2xl mx-auto">
-                   Nos partenaires officiels, nos sponsors locaux et l'agenda des conventions.
+                   Nos partenaires officiels, nos sponsors locaux et les retours de nos clients.
                  </p>
               </div>
               <Partners />
+              <Testimonials />
           </div>
         )}
       </main>
