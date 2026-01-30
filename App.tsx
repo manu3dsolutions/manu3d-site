@@ -6,7 +6,7 @@ import Partners from './components/Partners';
 import ProductList from './components/ProductList';
 import Contact from './components/Contact';
 import Portfolio from './components/Portfolio';
-import B2BService from './components/B2BService';
+import AtelierRequest from './components/AtelierRequest'; // Nouveau composant
 import LegalDocs from './components/LegalDocs';
 import CookieBanner from './components/CookieBanner';
 import Testimonials from './components/Testimonials';
@@ -45,12 +45,12 @@ function AppContent() {
   const [legalSection, setLegalSection] = useState('mentions');
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   
-  // NOUVELLE NAVIGATION : Ajout de 'custom' pour le configurateur
-  const [currentView, setCurrentView] = useState<'home' | 'shop' | 'atelier' | 'custom' | 'partners'>('home');
+  // NAVIGATION SIMPLIFIÉE : 'custom' supprimé
+  const [currentView, setCurrentView] = useState<'home' | 'shop' | 'atelier' | 'partners'>('home');
 
   useEffect(() => {
     // Log de version pour débogage Vercel
-    console.log("MANU3D BUILD: New Navigation Layout v2.0 (Custom + Atelier Split)");
+    console.log("MANU3D BUILD: V2.1 (Atelier Request Form - No Configurator)");
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'a') {
@@ -71,19 +71,17 @@ function AppContent() {
     <div className="min-h-screen bg-manu-black text-white font-sans selection:bg-manu-orange selection:text-black pt-0">
       <PromoBanner />
       
-      {/* HEADER PRINCIPAL - Assurez-vous que c'est bien Header et non Navbar */}
       <Header currentView={currentView} setView={setCurrentView} />
       
       <CartSidebar />
       
       <main className="min-h-screen">
-        {/* VIEW: HOME (Landing Split) */}
+        {/* VIEW: HOME */}
         {currentView === 'home' && (
           <Hero setView={setCurrentView} />
         )}
 
-        {/* VIEW: ATELIER (Showcase / Visuel / Services) */}
-        {/* On retire le configurateur d'ici pour alléger la page */}
+        {/* VIEW: ATELIER (Complet : Showcase + Formulaire de demande) */}
         {currentView === 'atelier' && (
           <div className="animate-in fade-in duration-500 pt-20">
              <div className="bg-[#0F1216] border-b border-gray-800 py-16 px-4 text-center relative overflow-hidden">
@@ -92,10 +90,13 @@ function AppContent() {
                    L'Atelier <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600">Créatif</span>
                 </h1>
                 <p className="text-gray-400 max-w-2xl mx-auto relative z-10 text-lg">
-                   Découvrez notre savoir-faire, nos réalisations d'exception et notre localisation.
+                   Donnons vie à vos idées. Impression 3D Sur-Mesure, Peinture & Prototypage.
                 </p>
              </div>
              
+             {/* Le formulaire de demande est maintenant prioritaire en haut de l'Atelier */}
+             <AtelierRequest />
+
              <Services />
              <Portfolio />
              <Testimonials />
@@ -103,45 +104,14 @@ function AppContent() {
           </div>
         )}
 
-        {/* VIEW: CUSTOM (Configurateur Technique Seul) */}
-        {/* Page dédiée à l'outil pour éviter les distractions */}
-        {currentView === 'custom' && (
-          <div className="animate-in fade-in duration-500 pt-20 min-h-screen bg-[#0B0D10]">
-             <div className="bg-[#0B0D10] border-b border-gray-800 py-12 px-4 text-center">
-                <h1 className="text-3xl md:text-5xl font-display font-bold text-white mb-4 uppercase">
-                   Impression <span className="text-manu-orange">Sur-Mesure</span>
-                </h1>
-                <p className="text-gray-400 max-w-xl mx-auto">
-                   Configurateur technique instantané. Importez vos fichiers STL, choisissez vos matériaux et obtenez votre devis en temps réel.
-                </p>
-             </div>
-             <B2BService />
-             {/* Petit rappel de rassurance en bas du configurateur */}
-             <div className="max-w-4xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center opacity-70">
-                 <div className="p-4 border border-gray-800 rounded-lg">
-                    <h4 className="text-white font-bold mb-1">Qualité Pro</h4>
-                    <p className="text-xs text-gray-500">Imprimantes 8K & 12K</p>
-                 </div>
-                 <div className="p-4 border border-gray-800 rounded-lg">
-                    <h4 className="text-white font-bold mb-1">Suivi Humain</h4>
-                    <p className="text-xs text-gray-500">Vérification manuelle des fichiers</p>
-                 </div>
-                 <div className="p-4 border border-gray-800 rounded-lg">
-                    <h4 className="text-white font-bold mb-1">Expédition Rapide</h4>
-                    <p className="text-xs text-gray-500">Emballage sécurisé anti-casse</p>
-                 </div>
-             </div>
-          </div>
-        )}
-
-        {/* VIEW: SHOP (E-commerce) */}
+        {/* VIEW: SHOP */}
         {currentView === 'shop' && (
           <div className="animate-in fade-in duration-500 pt-20">
               <ProductList />
           </div>
         )}
 
-        {/* VIEW: PARTNERS (Community) */}
+        {/* VIEW: PARTNERS */}
         {currentView === 'partners' && (
           <div className="animate-in fade-in duration-500 pt-20">
               <div className="bg-[#0F1216] border-b border-gray-800 py-12 px-4 text-center">
