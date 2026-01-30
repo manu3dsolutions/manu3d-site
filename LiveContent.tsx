@@ -221,7 +221,9 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 basePrice: s.base_price,
                 pricePerKg: s.price_per_kg,
                 isPickup: s.is_pickup,
-                estimatedDays: s.estimated_days
+                estimatedDays: s.estimated_days,
+                minWeight: s.min_weight || 0,        // Mappage (défaut 0g)
+                maxWeight: s.max_weight || 999999    // Mappage (défaut 1000kg)
             }));
             setShippingMethods(mappedShipping);
         }

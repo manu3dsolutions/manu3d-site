@@ -49,7 +49,6 @@ export interface Article {
   date: string;
   readTime: string;
   author: string;
-  slug?: string;
 }
 
 export interface Review {
@@ -70,6 +69,8 @@ export interface ShippingMethod {
   pricePerKg: number;
   isPickup: boolean;
   estimatedDays: string;
+  minWeight?: number; // Poids Min en grammes
+  maxWeight?: number; // Poids Max en grammes
 }
 
 export interface CartItem extends Product {
