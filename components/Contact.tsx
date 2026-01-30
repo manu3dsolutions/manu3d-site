@@ -109,7 +109,7 @@ const Contact: React.FC<ContactProps> = ({ onOpenLegal, onOpenAdmin }) => {
                 <label className="block text-sm font-medium text-gray-400 mb-1">Message</label>
                 <textarea rows={4} className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-manu-orange transition-colors" placeholder="Décrivez votre projet..." />
               </div>
-              <p className="text-[10px] text-gray-500">
+              <p className="text-[10px] text-gray-400">
                 En envoyant ce formulaire, vous acceptez que vos données soient utilisées pour traiter votre demande conformément à notre <button onClick={() => onOpenLegal('privacy')} className="text-manu-orange underline hover:text-white">politique de confidentialité</button>.
               </p>
               <button className="w-full bg-manu-orange text-black font-bold py-4 rounded-lg hover:bg-white transition-colors duration-300 uppercase tracking-wide">
@@ -121,8 +121,8 @@ const Contact: React.FC<ContactProps> = ({ onOpenLegal, onOpenAdmin }) => {
         </div>
         
         <div className="border-t border-gray-800 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left relative">
-          <p className="text-gray-500 text-sm">&copy; {new Date().getFullYear()} Manu3D. Tous droits réservés.</p>
-          <div className="flex gap-6 text-sm text-gray-500 flex-wrap justify-center">
+          <p className="text-gray-400 text-sm">&copy; {new Date().getFullYear()} Manu3D. Tous droits réservés.</p>
+          <div className="flex gap-6 text-sm text-gray-400 flex-wrap justify-center">
              <button onClick={() => onOpenLegal('mentions')} className="hover:text-manu-orange transition-colors">Mentions Légales</button>
              <button onClick={() => onOpenLegal('cgv')} className="hover:text-manu-orange transition-colors">CGV / CGU</button>
              <button onClick={() => onOpenLegal('privacy')} className="hover:text-manu-orange transition-colors">Données (RGPD)</button>

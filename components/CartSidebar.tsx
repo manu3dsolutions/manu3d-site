@@ -279,7 +279,7 @@ const CartSidebar: React.FC = () => {
                             ))}
                             
                             {/* Poids total indicator */}
-                            <div className="flex justify-end text-[10px] text-gray-500 mt-2 gap-1 items-center">
+                            <div className="flex justify-end text-[10px] text-gray-400 mt-2 gap-1 items-center">
                                 <Weight size={10} />
                                 Poids estimé : {(cartWeight/1000).toFixed(2)} kg
                             </div>
@@ -330,29 +330,29 @@ const CartSidebar: React.FC = () => {
 
                     <div className="space-y-3">
                         <div>
-                            <label className="text-xs text-gray-500 font-bold uppercase ml-1">Nom Complet *</label>
+                            <label className="text-xs text-gray-400 font-bold uppercase ml-1">Nom Complet *</label>
                             <input type="text" value={customerInfo.name} onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="Jean Dupont" />
                         </div>
                         <div>
-                            <label className="text-xs text-gray-500 font-bold uppercase ml-1">Email *</label>
+                            <label className="text-xs text-gray-400 font-bold uppercase ml-1">Email *</label>
                             <input type="email" value={customerInfo.email} onChange={e => setCustomerInfo({...customerInfo, email: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="jean@email.com" />
                         </div>
                         <div>
                             <label className="text-xs text-manu-orange font-bold uppercase ml-1 flex items-center gap-1"><Smartphone size={10}/> Téléphone Mobile *</label>
                             <input type="tel" value={customerInfo.phone} onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})} className="w-full bg-[#151921] border border-manu-orange/50 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="06 12 34 56 78" />
-                            <p className="text-[10px] text-gray-500 mt-1 ml-1">Format: 06 ou 07</p>
+                            <p className="text-[10px] text-gray-400 mt-1 ml-1">Format: 06 ou 07</p>
                         </div>
                         <div>
-                            <label className="text-xs text-gray-500 font-bold uppercase ml-1">Adresse (Rue/Voie) *</label>
+                            <label className="text-xs text-gray-400 font-bold uppercase ml-1">Adresse (Rue/Voie) *</label>
                             <input type="text" value={customerInfo.address} onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="10 rue de la Paix" />
                         </div>
                         <div className="flex gap-3">
                             <div className="w-1/3">
-                                <label className="text-xs text-gray-500 font-bold uppercase ml-1">Code Postal *</label>
+                                <label className="text-xs text-gray-400 font-bold uppercase ml-1">Code Postal *</label>
                                 <input type="text" value={customerInfo.zip} onChange={e => setCustomerInfo({...customerInfo, zip: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="75000" />
                             </div>
                             <div className="flex-1">
-                                <label className="text-xs text-gray-500 font-bold uppercase ml-1">Ville *</label>
+                                <label className="text-xs text-gray-400 font-bold uppercase ml-1">Ville *</label>
                                 <input type="text" value={customerInfo.city} onChange={e => setCustomerInfo({...customerInfo, city: e.target.value})} className="w-full bg-[#151921] border border-gray-700 rounded-lg p-3 text-white focus:border-manu-orange outline-none" placeholder="Paris" />
                             </div>
                         </div>
@@ -366,7 +366,7 @@ const CartSidebar: React.FC = () => {
                     <p className="text-sm text-gray-400 mb-4">Adresse de livraison : <span className="text-white font-bold">{customerInfo.city} ({customerInfo.zip})</span></p>
                     
                     {/* Badge Poids */}
-                    <div className="flex justify-between items-center bg-gray-900/50 p-2 rounded text-xs text-gray-500 border border-gray-800 mb-4">
+                    <div className="flex justify-between items-center bg-gray-900/50 p-2 rounded text-xs text-gray-400 border border-gray-800 mb-4">
                         <span>Poids total du colis :</span>
                         <span className="font-bold text-white">{(cartWeight/1000).toFixed(2)} kg</span>
                     </div>
@@ -388,7 +388,7 @@ const CartSidebar: React.FC = () => {
                                 <div className="flex-1">
                                     <h4 className="font-bold text-white text-sm">{method.name}</h4>
                                     <p className="text-xs text-gray-400">{method.description}</p>
-                                    <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1"><Package size={10}/> Délai estimé : {method.estimatedDays}</p>
+                                    <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><Package size={10}/> Délai estimé : {method.estimatedDays}</p>
                                 </div>
                                 <div className="font-bold text-manu-orange text-sm">
                                     {method.isPickup ? 'Gratuit' : (isFree ? <span className="text-green-500">Offert</span> : `${finalCost.toFixed(2)}€`)}
@@ -467,11 +467,11 @@ const CartSidebar: React.FC = () => {
                                         <input type="text" placeholder="0000 0000 0000 0000" className="w-full bg-black/50 border border-gray-600 rounded p-2 text-white font-mono mb-4 focus:border-manu-orange outline-none" />
                                         <div className="flex gap-3">
                                             <div className="flex-1">
-                                                <label className="text-[10px] text-gray-500 uppercase">Expiry</label>
+                                                <label className="text-[10px] text-gray-400 uppercase">Expiry</label>
                                                 <input type="text" placeholder="MM/YY" className="w-full bg-black/50 border border-gray-600 rounded p-2 text-white font-mono focus:border-manu-orange outline-none" />
                                             </div>
                                             <div className="flex-1">
-                                                <label className="text-[10px] text-gray-500 uppercase">CVC</label>
+                                                <label className="text-[10px] text-gray-400 uppercase">CVC</label>
                                                 <input type="text" placeholder="123" className="w-full bg-black/50 border border-gray-600 rounded p-2 text-white font-mono focus:border-manu-orange outline-none" />
                                             </div>
                                         </div>
@@ -484,7 +484,7 @@ const CartSidebar: React.FC = () => {
                                 >
                                     {isProcessing ? <Loader2 className="animate-spin" /> : `Payer ${finalTotal.toFixed(2)}€`}
                                 </button>
-                                <p className="text-center text-[10px] text-gray-500 flex items-center justify-center gap-1">
+                                <p className="text-center text-[10px] text-gray-400 flex items-center justify-center gap-1">
                                     <ShieldCheck size={10} /> Paiement 100% Sécurisé via SumUp
                                 </p>
                             </div>
@@ -502,10 +502,10 @@ const CartSidebar: React.FC = () => {
                     <div>
                         <h3 className="text-2xl font-bold text-white mb-2 font-display">Commande Validée !</h3>
                         <p className="text-gray-400">Merci {customerInfo.name}.</p>
-                        <p className="text-sm text-gray-500 mt-2">Un email de confirmation (facture) vient d'être envoyé à <br/><span className="text-white">{customerInfo.email}</span></p>
+                        <p className="text-sm text-gray-400 mt-2">Un email de confirmation (facture) vient d'être envoyé à <br/><span className="text-white">{customerInfo.email}</span></p>
                     </div>
                     <div className="bg-[#151921] p-4 rounded-xl border border-gray-800 w-full text-left">
-                        <p className="text-xs text-gray-500 uppercase mb-2">Prochaines étapes</p>
+                        <p className="text-xs text-gray-400 uppercase mb-2">Prochaines étapes</p>
                         <ul className="space-y-2 text-sm text-gray-300">
                             <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500"/> Validation Paiement</li>
                             <li className="flex items-center gap-2"><Loader2 size={14} className="text-manu-orange animate-spin-slow"/> Préparation en Atelier</li>
