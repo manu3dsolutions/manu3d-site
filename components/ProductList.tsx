@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { ShoppingCart, Eye, CloudLightning, Filter, User, Brush, Layers, X, Sparkles, ChevronRight, Star } from 'lucide-react';
+import { ShoppingCart, Eye, Filter, User, Brush, X, Sparkles, ChevronRight, Star, Layers, Box, ShieldCheck } from 'lucide-react';
 import { useLiveContent } from '../LiveContent';
 import { useCart } from '../contexts/CartContext';
 
 const ProductList: React.FC = () => {
-  const { products, usingLive, creators } = useLiveContent();
+  const { products, creators } = useLiveContent();
   const { addToCart } = useCart();
   
   const [activeCategory, setActiveCategory] = useState('Tous');
@@ -23,93 +23,78 @@ const ProductList: React.FC = () => {
      return matchCat && matchCreator;
   });
 
-  // Trouver les infos du créateur actif
-  const currentCreatorInfo = creators.find(c => c.name === activeCreator);
-
   return (
     <section id="shop" className="bg-[#0B0D10] relative min-h-screen">
       
-      {/* --- BANDEAU CRÉATEURS (STYLE IMMERSIF) --- */}
-      <div className="relative bg-[#151921] border-b border-gray-800 py-8">
-         {/* Texture de fond subtile */}
-         <div className="absolute inset-0 bg-[linear-gradient(45deg,#0F1216_25%,transparent_25%,transparent_75%,#0F1216_75%,#0F1216),linear-gradient(45deg,#0F1216_25%,transparent_25%,transparent_75%,#0F1216_75%,#0F1216)] bg-[length:20px_20px] bg-[position:0_0,10px_10px] opacity-20 pointer-events-none"></div>
-         <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#0B0D10] to-transparent z-0"></div>
+      {/* --- BANDEAU VIGNETTES CRÉATEURS (FILTRE VISUEL) --- */}
+      <div className="relative bg-[#151921] border-b border-gray-800 pt-12 pb-16">
+         {/* Texture de fond */}
+         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 pointer-events-none"></div>
 
-         <div className="max-w-[1600px] mx-auto px-4 relative z-10">
-            <div className="flex items-center justify-between mb-6">
-               <h2 className="text-2xl font-display font-bold text-white uppercase tracking-widest flex items-center gap-3">
-                 <div className="p-2 bg-manu-orange rounded text-black"><Brush size={20} /></div>
-                 <span>Les Artistes</span>
+         <div className="max-w-7xl mx-auto px-4 relative z-10">
+            
+            <div className="text-center mb-10">
+               <h2 className="text-3xl md:text-4xl font-display font-bold text-white uppercase tracking-widest mb-2">
+                 Nos <span className="text-manu-orange">Créateurs</span>
                </h2>
-               {activeCreator !== 'Tous' && (
-                  <button onClick={() => setActiveCreator('Tous')} className="text-sm text-manu-orange hover:text-white flex items-center gap-2 font-bold bg-black/50 px-3 py-1 rounded-full border border-manu-orange/30">
-                     <X size={14}/> Tout Afficher
-                  </button>
-               )}
+               <p className="text-gray-400 text-sm font-light">
+                 Sélectionnez un univers pour filtrer le catalogue
+               </p>
             </div>
 
-            {/* Scroll Container */}
-            <div className="flex overflow-x-auto gap-4 pb-4 custom-scrollbar snap-x scroll-pl-4">
+            {/* GRILLE DE VIGNETTES */}
+            <div className="flex flex-wrap justify-center gap-6 md:gap-10">
                
-               {/* Carte "TOUS" */}
+               {/* BOUTON 'TOUS' */}
                <button 
                   onClick={() => setActiveCreator('Tous')}
-                  className={`flex-shrink-0 snap-start relative w-40 h-56 md:w-48 md:h-64 rounded-xl overflow-hidden border-2 transition-all duration-300 group ${
-                    activeCreator === 'Tous' 
-                      ? 'border-manu-orange shadow-[0_0_25px_rgba(243,156,18,0.4)] scale-105 z-10' 
-                      : 'border-gray-700 hover:border-gray-500 opacity-60 hover:opacity-100 hover:scale-105'
-                  }`}
+                  className="group flex flex-col items-center gap-3 transition-all duration-300"
                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-black flex flex-col items-center justify-center gap-4 p-4">
-                     <div className={`p-4 rounded-full border-2 ${activeCreator === 'Tous' ? 'border-manu-orange bg-manu-orange/10 text-manu-orange' : 'border-gray-600 bg-gray-900 text-gray-500'}`}>
-                        <Layers size={32} />
-                     </div>
-                     <div className="text-center">
-                        <span className="font-bold text-white uppercase tracking-wider text-lg block">Catalogue</span>
-                        <span className="text-xs text-gray-400">Complet</span>
-                     </div>
+                  <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center border-2 transition-all duration-300 relative overflow-hidden ${activeCreator === 'Tous' ? 'border-manu-orange bg-manu-orange text-black shadow-[0_0_20px_rgba(243,156,18,0.4)] scale-110' : 'border-gray-700 bg-gray-800 text-gray-400 group-hover:border-gray-500 group-hover:text-white'}`}>
+                      <Layers size={32} />
                   </div>
+                  <span className={`text-xs font-bold uppercase tracking-wider ${activeCreator === 'Tous' ? 'text-manu-orange' : 'text-gray-500 group-hover:text-white'}`}>
+                    Tout Voir
+                  </span>
                </button>
 
-               {/* Cartes Artistes avec Images */}
+               {/* LISTE DES CRÉATEURS */}
                {creators.map(creator => {
-                  const modelCount = products.filter(p => p.creatorId === creator.id).length;
+                  const isActive = activeCreator === creator.name;
                   return (
                     <button 
                       key={creator.id}
                       onClick={() => setActiveCreator(creator.name)}
-                      className={`flex-shrink-0 snap-start relative w-40 h-56 md:w-48 md:h-64 rounded-xl overflow-hidden border-2 transition-all duration-300 group ${
-                        activeCreator === creator.name
-                          ? 'border-manu-orange shadow-[0_0_25px_rgba(243,156,18,0.4)] scale-105 z-10'
-                          : 'border-gray-700 hover:border-gray-500 grayscale hover:grayscale-0 brightness-50 hover:brightness-100'
-                      }`}
+                      className="group flex flex-col items-center gap-3 transition-all duration-300"
                     >
-                      {/* Image de fond (Avatar en grand) */}
-                      <div className="absolute inset-0 bg-gray-900">
-                          {creator.avatarUrl ? (
-                            <img src={creator.avatarUrl} alt={creator.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-600"><User size={48}/></div>
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90"></div>
-                      </div>
-
-                      {/* Infos */}
-                      <div className="absolute bottom-0 left-0 w-full p-4 text-left">
-                          <span className={`block font-display font-bold text-lg uppercase leading-none mb-1 ${activeCreator === creator.name ? 'text-manu-orange' : 'text-white'}`}>
-                              {creator.name}
-                          </span>
-                          <span className="text-xs text-gray-300 font-bold bg-white/10 px-2 py-0.5 rounded-full inline-block backdrop-blur-sm border border-white/5">
-                            {modelCount} Modèles
-                          </span>
-                      </div>
-
-                      {/* Indicateur actif */}
-                      {activeCreator === creator.name && (
-                          <div className="absolute top-3 right-3 bg-manu-orange text-black p-1 rounded-full shadow-lg animate-in zoom-in">
-                            <Star size={12} fill="currentColor" />
+                      {/* Avatar Cercle */}
+                      <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full border-2 p-1 transition-all duration-500 relative ${isActive ? 'border-manu-orange scale-110 shadow-[0_0_20px_rgba(243,156,18,0.3)]' : 'border-gray-700 group-hover:border-gray-500'}`}>
+                          <div className="w-full h-full rounded-full overflow-hidden bg-black relative">
+                            {creator.avatarUrl ? (
+                                <img 
+                                  src={creator.avatarUrl} 
+                                  alt={creator.name} 
+                                  className={`w-full h-full object-cover transition-all duration-500 ${isActive ? 'filter-none' : 'filter grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100'}`}
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gray-900 text-gray-600">
+                                   <User size={24} />
+                                </div>
+                            )}
                           </div>
-                      )}
+                          
+                          {/* Indicateur Actif */}
+                          {isActive && (
+                            <div className="absolute -bottom-1 -right-1 bg-manu-orange text-black p-1 rounded-full shadow-lg border-2 border-[#151921] animate-in zoom-in">
+                               <Star size={12} fill="currentColor" />
+                            </div>
+                          )}
+                      </div>
+
+                      {/* Nom */}
+                      <span className={`text-xs font-bold uppercase tracking-wider transition-colors ${isActive ? 'text-manu-orange' : 'text-gray-500 group-hover:text-white'}`}>
+                        {creator.name}
+                      </span>
                     </button>
                   );
                })}
@@ -123,20 +108,19 @@ const ProductList: React.FC = () => {
          {/* Filter Bar & Title */}
          <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-10 pb-6 border-b border-gray-800/50">
             <div>
-               <h3 className="text-2xl md:text-4xl font-display font-bold text-white uppercase tracking-tight flex items-center gap-3">
+               <h3 className="text-2xl md:text-3xl font-display font-bold text-white uppercase tracking-tight flex items-center gap-3">
                   {activeCreator === 'Tous' ? (
-                     <>Collections <span className="text-transparent bg-clip-text bg-gradient-to-r from-manu-orange to-yellow-200">Officielles</span></>
+                     <>Catalogue <span className="text-transparent bg-clip-text bg-gradient-to-r from-manu-orange to-yellow-200">Complet</span></>
                   ) : (
                      <>
-                        <span className="text-gray-500 text-xl md:text-2xl">Univers :</span> 
+                        <span className="text-gray-500 text-xl">Collection :</span> 
                         <span className="text-manu-orange">{activeCreator}</span>
                      </>
                   )}
                </h3>
                <p className="text-gray-400 text-sm mt-2 flex items-center gap-2">
                   <span className="bg-gray-800 text-white px-2 py-0.5 rounded text-xs font-bold">{filteredProducts.length}</span> artefacts disponibles
-                  <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
-                  Peints à la main ou Kit brut
+                  {activeCreator !== 'Tous' && <span className="text-green-500 text-xs flex items-center gap-1"><ShieldCheck size={12}/> Licence Officielle</span>}
                </p>
             </div>
 
@@ -144,7 +128,7 @@ const ProductList: React.FC = () => {
             <div className="flex items-center gap-3 bg-[#151921] px-5 py-3 rounded-xl border border-gray-700 hover:border-gray-500 transition-colors">
                <Filter size={16} className="text-manu-orange"/>
                <div className="flex flex-col">
-                  <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Catégorie</span>
+                  <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Type</span>
                   <select 
                     value={activeCategory} 
                     onChange={(e) => setActiveCategory(e.target.value)}
@@ -199,7 +183,7 @@ const ProductList: React.FC = () => {
                       <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold border border-gray-700 px-2 py-1 rounded">
                          {product.category}
                       </span>
-                      {creator && activeCreator === 'Tous' && (
+                      {creator && (
                          <span className="text-[10px] text-gray-500 flex items-center gap-1">
                             <Brush size={10} className="text-gray-400" /> {creator.name}
                          </span>
@@ -231,9 +215,9 @@ const ProductList: React.FC = () => {
              );
            }) : (
               <div className="col-span-full py-20 flex flex-col items-center justify-center text-gray-500 bg-[#121418]/30 rounded-3xl border border-gray-800 border-dashed animate-in fade-in">
-                 <Filter size={64} className="mb-6 opacity-20 text-manu-orange" />
-                 <p className="font-bold text-xl text-gray-300">Aucun artefact trouvé.</p>
-                 <p className="text-sm mb-6">Essayez de changer de filtre ou d'artiste.</p>
+                 <Box size={64} className="mb-6 opacity-20 text-manu-orange" />
+                 <p className="font-bold text-xl text-gray-300">La salle des coffres est vide pour ce filtre.</p>
+                 <p className="text-sm mb-6 text-gray-500">Essayez de sélectionner "Tout Voir" ou une autre catégorie.</p>
                  <button onClick={() => { setActiveCategory('Tous'); setActiveCreator('Tous'); }} className="px-8 py-3 bg-gray-800 hover:bg-white hover:text-black rounded-full text-sm font-bold transition-all">
                     Réinitialiser les filtres
                  </button>
