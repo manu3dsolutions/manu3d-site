@@ -49,6 +49,9 @@ function AppContent() {
   const [currentView, setCurrentView] = useState<'home' | 'shop' | 'atelier' | 'custom' | 'partners'>('home');
 
   useEffect(() => {
+    // Log de version pour débogage Vercel
+    console.log("MANU3D BUILD: New Navigation Layout v2.0 (Custom + Atelier Split)");
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'a') {
         event.preventDefault();
@@ -68,6 +71,7 @@ function AppContent() {
     <div className="min-h-screen bg-manu-black text-white font-sans selection:bg-manu-orange selection:text-black pt-0">
       <PromoBanner />
       
+      {/* HEADER PRINCIPAL - Assurez-vous que c'est bien Header et non Navbar */}
       <Header currentView={currentView} setView={setCurrentView} />
       
       <CartSidebar />
