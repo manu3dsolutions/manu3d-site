@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Menu, X, ShoppingBag, Hammer, Store, Home } from 'lucide-react';
+import { Menu, X, ShoppingBag, Hammer, Store, Home, Users, Calculator } from 'lucide-react';
 import { useLiveContent } from '../LiveContent';
 import { useCart } from '../contexts/CartContext';
 
 interface HeaderProps {
-  currentView: 'home' | 'atelier' | 'shop';
-  setView: (view: 'home' | 'atelier' | 'shop') => void;
+  currentView: 'home' | 'shop' | 'atelier' | 'custom' | 'partners';
+  setView: (view: 'home' | 'shop' | 'atelier' | 'custom' | 'partners') => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
@@ -25,7 +25,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
     }`;
   };
 
-  const handleNav = (view: 'home' | 'atelier' | 'shop') => {
+  const handleNav = (view: 'home' | 'shop' | 'atelier' | 'custom' | 'partners') => {
     setView(view);
     setIsOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -53,20 +53,37 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
           </div>
           
           {/* Menu Desktop Central */}
-          <div className="hidden md:flex items-center bg-black/30 p-1 rounded-xl border border-white/5">
+          <div className="hidden lg:flex items-center bg-black/30 p-1 rounded-xl border border-white/5 gap-1">
              <button onClick={() => handleNav('home')} className={getLinkStyle('home')}>
                 <Home size={16} /> Accueil
              </button>
-             <button onClick={() => handleNav('atelier')} className={getLinkStyle('atelier')}>
-                <Hammer size={16} /> L'Atelier (Sur-Mesure)
-             </button>
              <button onClick={() => handleNav('shop')} className={getLinkStyle('shop')}>
-                <Store size={16} /> La Boutique
+                <Store size={16} /> Boutique
+             </button>
+             <button onClick={() => handleNav('atelier')} className={getLinkStyle('atelier')}>
+                <Hammer size={16} /> L'Atelier
+             </button>
+             <button onClick={() => handleNav('partners')} className={getLinkStyle('partners')}>
+                <Users size={16} /> Communauté
              </button>
           </div>
 
           {/* Actions Droite */}
           <div className="flex items-center gap-4">
+              
+              {/* Bouton CTA "Sur-Mesure" (Visible Desktop) - STYLE UPDATED FOR VISIBILITY */}
+              <button 
+                 onClick={() => handleNav('custom')}
+                 className={`hidden xl:flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold uppercase tracking-wide border transition-all duration-300 ${
+                    currentView === 'custom' 
+                    ? 'bg-blue-600 text-white border-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.5)]' 
+                    : 'bg-gradient-to-r from-blue-600 to-blue-500 border-blue-400 text-white hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-105'
+                 }`}
+              >
+                 <Calculator size={16} />
+                 <span>Devis 3D</span>
+              </button>
+
               {/* Panier (Toujours visible) */}
               <button 
                 onClick={() => setIsCartOpen(true)}
@@ -80,14 +97,10 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
                   )}
               </button>
 
-              <a href="#contact" className="hidden lg:block bg-white/5 border border-white/10 text-white hover:bg-manu-orange hover:text-black hover:border-manu-orange px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-300">
-                Contact
-              </a>
-
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-manu-orange hover:bg-white/5 focus:outline-none"
+                className="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-manu-orange hover:bg-white/5 focus:outline-none"
               >
                 {isOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
@@ -98,11 +111,13 @@ const Header: React.FC<HeaderProps> = ({ currentView, setView }) => {
 
       {/* Menu Mobile Déroulant */}
       {isOpen && (
-        <div className="md:hidden bg-[#0F1216] border-b border-gray-800 animate-in slide-in-from-top-5 duration-200">
+        <div className="lg:hidden bg-[#0F1216] border-b border-gray-800 animate-in slide-in-from-top-5 duration-200">
           <div className="px-4 pt-4 pb-6 space-y-2">
             <button onClick={() => handleNav('home')} className="w-full text-left text-gray-300 hover:text-manu-orange hover:bg-white/5 block px-3 py-3 rounded-md text-base font-medium">Accueil</button>
-            <button onClick={() => handleNav('atelier')} className="w-full text-left text-manu-orange hover:text-white hover:bg-manu-orange/10 block px-3 py-3 rounded-md text-base font-bold border-l-2 border-manu-orange pl-4">L'Atelier 3D</button>
             <button onClick={() => handleNav('shop')} className="w-full text-left text-gray-300 hover:text-manu-orange hover:bg-white/5 block px-3 py-3 rounded-md text-base font-medium">La Boutique</button>
+            <button onClick={() => handleNav('atelier')} className="w-full text-left text-gray-300 hover:text-manu-orange hover:bg-white/5 block px-3 py-3 rounded-md text-base font-medium">L'Atelier (Galerie)</button>
+            <button onClick={() => handleNav('custom')} className="w-full text-left text-blue-400 hover:text-white hover:bg-blue-600/20 block px-3 py-3 rounded-md text-base font-bold border-l-2 border-blue-500 pl-4 bg-blue-900/10">Devis Sur-Mesure</button>
+            <button onClick={() => handleNav('partners')} className="w-full text-left text-gray-300 hover:text-manu-orange hover:bg-white/5 block px-3 py-3 rounded-md text-base font-medium">Communauté</button>
             <a href="#contact" onClick={() => setIsOpen(false)} className="mt-4 block w-full text-center bg-gray-800 text-white font-bold py-3 rounded-lg hover:bg-gray-700">Contact</a>
           </div>
         </div>

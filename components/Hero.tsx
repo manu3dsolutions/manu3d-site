@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Printer, ShoppingCart, ArrowRight, Hammer, Sparkles } from 'lucide-react';
+import { Printer, ShoppingCart, ArrowRight, Hammer, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { useLiveContent } from '../LiveContent';
 
 interface HeroProps {
-  setView: (view: 'atelier' | 'shop') => void;
+  setView: (view: 'atelier' | 'shop' | 'custom') => void;
 }
 
 const Hero: React.FC<HeroProps> = ({ setView }) => {
@@ -29,12 +29,12 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
 
       <div className="relative z-20 w-full h-full flex flex-col md:flex-row">
         
-        {/* COTÉ ATELIER (GAUCHE) */}
+        {/* COTÉ ATELIER (GAUCHE) -> Redirige vers la découverte Atelier, mais bouton vers Config */}
         <div 
           className={`relative flex-1 flex flex-col justify-center items-center p-8 transition-all duration-700 ease-in-out border-b md:border-b-0 md:border-r border-gray-800/30 cursor-pointer group ${hoveredSide === 'left' ? 'flex-[1.5] bg-manu-orange/10 backdrop-blur-sm' : hoveredSide === 'right' ? 'flex-[0.8] opacity-60' : 'flex-1'}`}
           onMouseEnter={() => setHoveredSide('left')}
           onMouseLeave={() => setHoveredSide('none')}
-          onClick={() => setView('atelier')}
+          onClick={() => setView('atelier')} // Le clic global mène à la page Showcase
         >
            <div className="absolute inset-0 bg-gradient-to-b md:bg-gradient-to-r from-blue-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
            
@@ -48,10 +48,25 @@ const Hero: React.FC<HeroProps> = ({ setView }) => {
               <p className="text-gray-200 max-w-sm mx-auto mb-8 font-light h-12 drop-shadow-md">
                 Impression sur mesure, devis en ligne et services techniques pour vos projets.
               </p>
-              <button className="px-8 py-3 rounded-full border border-blue-500/50 bg-black/40 backdrop-blur text-blue-400 font-bold uppercase tracking-widest text-xs hover:bg-blue-500 hover:text-white transition-all flex items-center gap-2 mx-auto">
-                <Hammer size={14} />
-                Configurer mon projet
-              </button>
+              
+              <div className="flex gap-4 justify-center">
+                  {/* Bouton vers CONFIGURATEUR */}
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setView('custom'); }}
+                    className="px-6 py-3 rounded-full border border-blue-500/50 bg-blue-600/80 backdrop-blur text-white font-bold uppercase tracking-widest text-xs hover:bg-blue-500 transition-all flex items-center gap-2"
+                  >
+                    <Hammer size={14} />
+                    Devis STL
+                  </button>
+                  
+                  {/* Bouton vers SHOWCASE (déjà action par défaut mais explicite) */}
+                  <button 
+                    className="px-6 py-3 rounded-full border border-white/20 bg-black/40 backdrop-blur text-gray-300 font-bold uppercase tracking-widest text-xs hover:bg-white hover:text-black transition-all flex items-center gap-2"
+                  >
+                    <ImageIcon size={14} />
+                    Galerie
+                  </button>
+              </div>
            </div>
         </div>
 

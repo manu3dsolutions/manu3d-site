@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, FileText, Download, Calculator, Box, CheckCircle, Rotate3D, AlertCircle, Loader2, Palette, Info, Layers, ShieldAlert, Clock, Brush, Coins, ShoppingCart } from 'lucide-react';
+import { Upload, FileText, Download, Calculator, Box, CheckCircle, Rotate3D, AlertCircle, Loader2, Palette, Info, Layers, ShieldAlert, Clock, Brush, Coins, ShoppingCart, Lock, Gavel, CheckSquare, Square } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { supabase } from '../supabaseClient';
@@ -248,6 +248,9 @@ const B2BService: React.FC = () => {
   const [surfaceMm2, setSurfaceMm2] = useState(0);
   const [volumeMm3, setVolumeMm3] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // LEGAL & COMPLIANCE
+  const [legalAccepted, setLegalAccepted] = useState(false);
 
   // Calculated Quote
   const [quote, setQuote] = useState<QuoteDetails>({
@@ -289,6 +292,7 @@ const B2BService: React.FC = () => {
       setIsAnalyzing(true);
       // Reset
       setSurfaceMm2(0); setVolumeMm3(0);
+      setLegalAccepted(false); // Reset legal consent on new file
   };
 
   const handleAnalysis = (areaMm2: number, volMm3: number) => {
@@ -337,10 +341,14 @@ const B2BService: React.FC = () => {
 
   const handleAddToCart = () => {
       if (!file) return;
+      if (!legalAccepted) {
+          alert("Veuillez accepter les conditions légales sur la propriété intellectuelle.");
+          return;
+      }
 
       const customItem: CartItem = {
           id: Date.now(), // ID temporaire unique
-          title: `Impression Sur Mesure - ${file.name}`,
+          title: `Projet Unique - ${file.name}`,
           category: 'Service',
           price: `${(quote.total / quantity).toFixed(2)}€`,
           numericPrice: quote.total / quantity,
@@ -365,6 +373,7 @@ const B2BService: React.FC = () => {
       setFileUrl(null);
       setVolumeMm3(0);
       setQuantity(1);
+      setLegalAccepted(false);
   };
 
   return (
@@ -372,11 +381,11 @@ const B2BService: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold uppercase tracking-widest mb-4">
-            <Calculator size={14} /> Devis Intelligent
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-manu-orange/10 text-manu-orange border border-manu-orange/20 text-xs font-bold uppercase tracking-widest mb-4">
+            <Calculator size={14} /> Option Atelier
           </div>
-          <h2 className="text-3xl font-display font-bold text-white mb-2">Calculateur <span className="text-blue-500">Pro</span></h2>
-          <p className="text-gray-400 text-sm">Tarification basée sur le volume réel et le temps de travail.</p>
+          <h2 className="text-3xl font-display font-bold text-white mb-2">Projet <span className="text-manu-orange">Unique</span> & Upload</h2>
+          <p className="text-gray-400 text-sm">Téléchargez votre modèle 3D (STL) et obtenez un devis immédiat.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -391,12 +400,12 @@ const B2BService: React.FC = () => {
                          <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => e.target.files?.[0] && processFile(e.target.files[0])} accept=".stl" />
                          <Upload size={48} className="text-gray-500 mb-4" />
                          <h3 className="text-white font-bold text-lg">Déposez votre fichier STL</h3>
-                         <p className="text-gray-500 text-sm mt-2">Maximum 50MB</p>
+                         <p className="text-gray-500 text-sm mt-2">Glissez-déposez ou cliquez (Max 50MB)</p>
                        </>
                     ) : (
                        <div className="w-full h-full rounded-xl overflow-hidden">
                           {fileUrl && <STLViewer url={fileUrl} color={selectedMat.color_hex} onAnalyzed={handleAnalysis} />}
-                          <button onClick={() => { setFile(null); setFileUrl(null); setVolumeMm3(0); }} className="absolute top-4 right-4 bg-red-900/80 p-2 rounded text-white hover:bg-red-700 z-10"><Info size={16}/></button>
+                          <button onClick={() => { setFile(null); setFileUrl(null); setVolumeMm3(0); setLegalAccepted(false); }} className="absolute top-4 right-4 bg-red-900/80 p-2 rounded text-white hover:bg-red-700 z-10" title="Changer de fichier"><Info size={16}/></button>
                        </div>
                     )}
                 </div>
@@ -421,7 +430,7 @@ const B2BService: React.FC = () => {
                 </div>
             </div>
 
-            {/* RIGHT: CONFIG & PRICE (Cols 5) */}
+            {/* RIGHT: CONFIG & PRICE & LEGAL (Cols 5) */}
             <div className="lg:col-span-5 space-y-6">
                 
                 {/* 1. Materiau */}
@@ -458,8 +467,8 @@ const B2BService: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 3. Quote Block */}
-                <div className="bg-black border border-gray-700 p-6 rounded-xl shadow-2xl relative overflow-hidden">
+                {/* 3. Quote Block WITH LEGAL RESERVE */}
+                <div className="bg-black border border-gray-700 p-6 rounded-xl shadow-2xl relative overflow-hidden flex flex-col">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-manu-orange/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                     
                     <h3 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
@@ -491,17 +500,50 @@ const B2BService: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="pt-4 border-t border-gray-800 flex justify-between items-end">
+                    <div className="pt-4 border-t border-gray-800 flex justify-between items-end mb-6">
                         <span className="text-gray-500 text-xs uppercase">Total Estimé</span>
                         <span className="text-4xl font-bold text-manu-orange font-display">{quote.total.toFixed(2)}€</span>
                     </div>
 
+                    {/* --- RESERVE LEGALE & IP CHECKBOX --- */}
+                    <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-800 mb-4 text-[10px] text-gray-400">
+                        <h4 className="flex items-center gap-1 text-manu-orange font-bold mb-2">
+                            <Gavel size={12} /> Réserve Légale & Copyright
+                        </h4>
+                        <p className="mb-2">
+                           Manu3D agit en tant que prestataire technique. Nous ne sommes pas responsables du contenu des fichiers fournis.
+                           <span className="block mt-1 text-red-400">
+                               <ShieldAlert size={10} className="inline mr-1" />
+                               Refus strict d'impression d'armes réelles ou objets illégaux.
+                           </span>
+                        </p>
+                        
+                        <label className={`flex items-start gap-2 cursor-pointer p-2 rounded transition-colors ${legalAccepted ? 'bg-green-900/20 border border-green-500/30' : 'bg-black border border-red-500/30'}`}>
+                            <div className="relative flex items-center pt-0.5">
+                                <input 
+                                    type="checkbox" 
+                                    className="peer sr-only"
+                                    checked={legalAccepted}
+                                    onChange={(e) => setLegalAccepted(e.target.checked)}
+                                />
+                                {legalAccepted ? <CheckSquare size={16} className="text-green-500" /> : <Square size={16} className="text-red-500" />}
+                            </div>
+                            <span className={`leading-tight ${legalAccepted ? 'text-green-200' : 'text-gray-300'}`}>
+                                Je certifie sur l'honneur détenir les droits de propriété intellectuelle de ce fichier et qu'il ne contrevient à aucune loi en vigueur.
+                            </span>
+                        </label>
+                    </div>
+
                     <button 
-                         disabled={volumeMm3 === 0}
+                         disabled={volumeMm3 === 0 || !legalAccepted}
                          onClick={handleAddToCart}
-                         className="w-full mt-6 bg-manu-orange text-black font-bold py-3 rounded hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                         className={`w-full bg-manu-orange text-black font-bold py-3 rounded transition-all flex items-center justify-center gap-2 ${
+                            (volumeMm3 === 0 || !legalAccepted) ? 'opacity-50 cursor-not-allowed bg-gray-600' : 'hover:bg-white'
+                         }`}
                     >
-                        {volumeMm3 === 0 ? "Importez un fichier" : <><ShoppingCart size={18}/> Ajouter au panier</>}
+                        {volumeMm3 === 0 ? "En attente de fichier..." : 
+                         !legalAccepted ? "Validez la réserve légale" : 
+                         <><ShoppingCart size={18}/> Ajouter le projet au panier</>}
                     </button>
                 </div>
 
