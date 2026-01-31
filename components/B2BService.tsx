@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, FileText, Download, Calculator, Box, CheckCircle, Rotate3D, AlertCircle, Loader2, Palette, Info, Layers, ShieldAlert, Clock, Brush, Coins, ShoppingCart, Lock, Gavel, CheckSquare, Square, Scale } from 'lucide-react';
+import { Upload, Calculator, Box, CheckCircle, Loader2, Palette, Info, Layers, ShieldAlert, Clock, Brush, Coins, ShoppingCart, Gavel, CheckSquare, Square, Scale } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { supabase } from '../supabaseClient';
 import { useCart } from '../contexts/CartContext';
 import { CartItem } from '../types';
+import { useLiveContent, PrintingMaterial } from '../LiveContent';
 
 // --- Web Worker Code for STL Parsing (Volume + Surface) ---
 const workerCode = `
@@ -96,30 +96,6 @@ self.onmessage = function(e) {
   xhr.send();
 };
 `;
-
-interface PrintingMaterial {
-  id: string;
-  name: string;
-  type: string;
-  density: number;
-  cost_per_gram: number;
-  color_hex: string;
-}
-
-interface QuoteDetails {
-    materialCost: number;
-    machineCost: number;
-    paintCost: number;
-    setupFee: number;
-    total: number;
-    paintHours: number;
-    weight: number;
-}
-
-const DEFAULT_MATERIALS: PrintingMaterial[] = [
-  { id: 'pla-orange', name: 'PLA Premium (Orange)', type: 'STANDARD', density: 1.24, cost_per_gram: 0.15, color_hex: 'F39C12' },
-  { id: 'resin-grey', name: 'Résine 8K (Gris)', type: 'RESINE', density: 1.15, cost_per_gram: 0.35, color_hex: '808080' },
-];
 
 const FINISHES = [
   { id: 'raw', name: 'Brut (Supports retirés)', painting: false },
@@ -227,83 +203,65 @@ const STLViewer: React.FC<{ url: string; color: string; onAnalyzed?: (area: numb
   );
 };
 
+interface QuoteDetails {
+    materialCost: number;
+    machineCost: number;
+    paintCost: number;
+    setupFee: number;
+    total: number;
+    paintHours: number;
+    weight: number;
+}
+
 const B2BService: React.FC = () => {
   const { addToCart } = useCart();
+  const { printingMaterials } = useLiveContent();
+  
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   
-  // Data from DB
-  const [materials, setMaterials] = useState<PrintingMaterial[]>(DEFAULT_MATERIALS);
-  const [config, setConfig] = useState<any>({
+  const [config] = useState<any>({
       hourly_rate_painting: 35,
       hourly_rate_machine: 2.5,
       setup_fee: 5,
       paint_speed_cm2_per_hour: 150
   });
 
-  // User Selection
-  const [selectedMat, setSelectedMat] = useState<PrintingMaterial>(DEFAULT_MATERIALS[0]);
+  const [selectedMat, setSelectedMat] = useState<PrintingMaterial | null>(null);
   const [selectedFinish, setSelectedFinish] = useState(FINISHES[0]);
   const [quantity, setQuantity] = useState(1);
   const [surfaceMm2, setSurfaceMm2] = useState(0);
   const [volumeMm3, setVolumeMm3] = useState(0);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  
-  // LEGAL & COMPLIANCE
   const [legalAccepted, setLegalAccepted] = useState(false);
+
+  // Initialize selected material when loaded from Supabase
+  useEffect(() => {
+    if (printingMaterials.length > 0 && !selectedMat) {
+        setSelectedMat(printingMaterials[0]);
+    }
+  }, [printingMaterials, selectedMat]);
 
   // Calculated Quote
   const [quote, setQuote] = useState<QuoteDetails>({
       materialCost: 0, machineCost: 0, paintCost: 0, setupFee: 0, total: 0, paintHours: 0, weight: 0
   });
 
-  // 1. Fetch Config
-  useEffect(() => {
-      const loadConfig = async () => {
-          const { data: mats } = await supabase.from('printing_materials').select('*').eq('active', true);
-          const { data: conf } = await supabase.from('site_config').select('*');
-          
-          if (mats && mats.length > 0) {
-             const mappedMats = mats.map((m:any) => ({
-                 ...m,
-                 color_hex: m.color_hex || 'FFFFFF', // fallback
-                 density: Number(m.density),
-                 cost_per_gram: Number(m.cost_per_gram)
-             }));
-             setMaterials(mappedMats);
-             setSelectedMat(mappedMats[0]);
-          }
-
-          if (conf) {
-              const newConfig = { ...config };
-              conf.forEach((row:any) => {
-                  if(newConfig[row.key] !== undefined) newConfig[row.key] = parseFloat(row.value);
-              });
-              setConfig(newConfig);
-          }
-      };
-      loadConfig();
-  }, []);
-
-  // 2. Handle File
+  // Handle File
   const processFile = (f: File) => {
       setFile(f);
       setFileUrl(URL.createObjectURL(f));
-      setIsAnalyzing(true);
-      // Reset
       setSurfaceMm2(0); setVolumeMm3(0);
-      setLegalAccepted(false); // Reset legal consent on new file
+      setLegalAccepted(false);
   };
 
   const handleAnalysis = (areaMm2: number, volMm3: number) => {
       setSurfaceMm2(areaMm2);
       setVolumeMm3(volMm3);
-      setIsAnalyzing(false);
   };
 
-  // 3. Calculate Price
+  // Calculate Price
   useEffect(() => {
-      if (volumeMm3 === 0) return;
+      if (volumeMm3 === 0 || !selectedMat) return;
 
       const volumeCm3 = volumeMm3 / 1000;
       const surfaceCm2 = surfaceMm2 / 100;
@@ -340,19 +298,19 @@ const B2BService: React.FC = () => {
   }, [volumeMm3, selectedMat, selectedFinish, quantity, config]);
 
   const handleAddToCart = () => {
-      if (!file) return;
+      if (!file || !selectedMat) return;
       if (!legalAccepted) {
           alert("Veuillez accepter les conditions légales sur la propriété intellectuelle.");
           return;
       }
 
       const customItem: CartItem = {
-          id: Date.now(), // ID temporaire unique
+          id: Date.now(),
           title: `Projet Unique - ${file.name}`,
           category: 'Service',
           price: `${(quote.total / quantity).toFixed(2)}€`,
           numericPrice: quote.total / quantity,
-          image: 'https://via.placeholder.com/150?text=3D+File', // Placeholder pour fichier
+          image: 'https://via.placeholder.com/150?text=3D+File',
           description: `${selectedMat.name} - ${selectedFinish.name}`,
           quantity: quantity,
           type: 'custom',
@@ -362,13 +320,12 @@ const B2BService: React.FC = () => {
               materialName: selectedMat.name,
               finishName: selectedFinish.name,
               volumeCm3: volumeMm3 / 1000,
-              printHours: 0, // Estimatif
+              printHours: 0,
               paintHours: quote.paintHours
           }
       };
       
       addToCart(customItem);
-      // Reset after add
       setFile(null);
       setFileUrl(null);
       setVolumeMm3(0);
@@ -385,7 +342,7 @@ const B2BService: React.FC = () => {
             <Calculator size={14} /> Option Atelier
           </div>
           <h2 className="text-3xl font-display font-bold text-white mb-2">Projet <span className="text-manu-orange">Unique</span> & Upload</h2>
-          <p className="text-gray-400 text-sm">Téléchargez votre modèle 3D (STL) et obtenez un devis immédiat.</p>
+          <p className="text-gray-400 text-sm">Téléchargez votre modèle 3D (STL) et obtenez un devis immédiat avec nos matériaux en stock.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -404,7 +361,7 @@ const B2BService: React.FC = () => {
                        </>
                     ) : (
                        <div className="w-full h-full rounded-xl overflow-hidden">
-                          {fileUrl && <STLViewer url={fileUrl} color={selectedMat.color_hex} onAnalyzed={handleAnalysis} />}
+                          {fileUrl && selectedMat && <STLViewer url={fileUrl} color={selectedMat.color_hex} onAnalyzed={handleAnalysis} />}
                           <button onClick={() => { setFile(null); setFileUrl(null); setVolumeMm3(0); setLegalAccepted(false); }} className="absolute top-4 right-4 bg-red-900/80 p-2 rounded text-white hover:bg-red-700 z-10" title="Changer de fichier"><Info size={16}/></button>
                        </div>
                     )}
@@ -414,17 +371,17 @@ const B2BService: React.FC = () => {
                 <div className="grid grid-cols-3 gap-4">
                     <div className="bg-[#151921] p-4 rounded-lg border border-gray-800 text-center">
                         <Box className="mx-auto text-blue-500 mb-2" size={20} />
-                        <div className="text-xs text-gray-500 uppercase">Volume Matière</div>
+                        <div className="text-xs text-gray-500 uppercase">Volume</div>
                         <div className="text-lg font-bold text-white">{(volumeMm3 / 1000).toFixed(2)} <span className="text-xs">cm³</span></div>
                     </div>
                     <div className="bg-[#151921] p-4 rounded-lg border border-gray-800 text-center">
                         <Layers className="mx-auto text-purple-500 mb-2" size={20} />
-                        <div className="text-xs text-gray-500 uppercase">Surface Totale</div>
+                        <div className="text-xs text-gray-500 uppercase">Surface</div>
                         <div className="text-lg font-bold text-white">{(surfaceMm2 / 100).toFixed(0)} <span className="text-xs">cm²</span></div>
                     </div>
                     <div className="bg-[#151921] p-4 rounded-lg border border-gray-800 text-center">
                         <Scale className="mx-auto text-green-500 mb-2" size={20} />
-                        <div className="text-xs text-gray-500 uppercase">Poids Estimé</div>
+                        <div className="text-xs text-gray-500 uppercase">Poids Est.</div>
                         <div className="text-lg font-bold text-white">{quote.weight.toFixed(1)} <span className="text-xs">g</span></div>
                     </div>
                 </div>
@@ -433,21 +390,25 @@ const B2BService: React.FC = () => {
             {/* RIGHT: CONFIG & PRICE & LEGAL (Cols 5) */}
             <div className="lg:col-span-5 space-y-6">
                 
-                {/* 1. Materiau */}
+                {/* 1. Materiau (DYNAMIQUE DEPUIS SUPABASE) */}
                 <div className="bg-[#151921] p-6 rounded-xl border border-gray-800">
-                    <h3 className="text-white font-bold mb-4 flex items-center gap-2"><Palette size={18}/> Matériau</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                        {materials.map(m => (
-                            <button 
-                                key={m.id}
-                                onClick={() => setSelectedMat(m)}
-                                className={`p-3 rounded text-left border transition-all ${selectedMat.id === m.id ? 'bg-manu-orange/10 border-manu-orange text-white' : 'bg-black/20 border-gray-700 text-gray-400 hover:bg-black/40'}`}
-                            >
-                                <div className="font-bold text-sm">{m.name}</div>
-                                <div className="text-[10px] opacity-70">{m.type}</div>
-                            </button>
-                        ))}
-                    </div>
+                    <h3 className="text-white font-bold mb-4 flex items-center gap-2"><Palette size={18}/> Matériau en Stock</h3>
+                    {printingMaterials.length === 0 ? (
+                        <div className="text-gray-500 text-sm flex items-center gap-2"><Loader2 className="animate-spin"/> Chargement des matériaux...</div>
+                    ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                            {printingMaterials.map(m => (
+                                <button 
+                                    key={m.id}
+                                    onClick={() => setSelectedMat(m)}
+                                    className={`p-3 rounded text-left border transition-all ${selectedMat?.id === m.id ? 'bg-manu-orange/10 border-manu-orange text-white' : 'bg-black/20 border-gray-700 text-gray-400 hover:bg-black/40'}`}
+                                >
+                                    <div className="font-bold text-sm">{m.name}</div>
+                                    <div className="text-[10px] opacity-70">{m.type}</div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* 2. Finition (Peinture) */}
@@ -467,7 +428,7 @@ const B2BService: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 3. Quote Block WITH LEGAL RESERVE */}
+                {/* 3. Quote Block */}
                 <div className="bg-black border border-gray-700 p-6 rounded-xl shadow-2xl relative overflow-hidden flex flex-col">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-manu-orange/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                     
@@ -505,19 +466,11 @@ const B2BService: React.FC = () => {
                         <span className="text-4xl font-bold text-manu-orange font-display">{quote.total.toFixed(2)}€</span>
                     </div>
 
-                    {/* --- RESERVE LEGALE & IP CHECKBOX --- */}
+                    {/* RESERVE LEGALE */}
                     <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-800 mb-4 text-[10px] text-gray-400">
                         <h4 className="flex items-center gap-1 text-manu-orange font-bold mb-2">
-                            <Gavel size={12} /> Réserve Légale & Copyright
+                            <Gavel size={12} /> Réserve Légale
                         </h4>
-                        <p className="mb-2">
-                           Manu3D agit en tant que prestataire technique. Nous ne sommes pas responsables du contenu des fichiers fournis.
-                           <span className="block mt-1 text-red-400">
-                               <ShieldAlert size={10} className="inline mr-1" />
-                               Refus strict d'impression d'armes réelles ou objets illégaux.
-                           </span>
-                        </p>
-                        
                         <label className={`flex items-start gap-2 cursor-pointer p-2 rounded transition-colors ${legalAccepted ? 'bg-green-900/20 border border-green-500/30' : 'bg-black border border-red-500/30'}`}>
                             <div className="relative flex items-center pt-0.5">
                                 <input 
@@ -529,7 +482,7 @@ const B2BService: React.FC = () => {
                                 {legalAccepted ? <CheckSquare size={16} className="text-green-500" /> : <Square size={16} className="text-red-500" />}
                             </div>
                             <span className={`leading-tight ${legalAccepted ? 'text-green-200' : 'text-gray-300'}`}>
-                                Je certifie sur l'honneur détenir les droits de propriété intellectuelle de ce fichier et qu'il ne contrevient à aucune loi en vigueur.
+                                Je certifie détenir les droits de propriété intellectuelle de ce fichier.
                             </span>
                         </label>
                     </div>
