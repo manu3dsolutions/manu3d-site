@@ -50,11 +50,23 @@ const AdminTool: React.FC<AdminToolProps> = ({ isOpen, onClose }) => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const env = (import.meta as any).env || {};
-    const storedPwd = env.VITE_ADMIN_PASSWORD;
+    
+    // 1. Récupération via import.meta.env (Standard Vite)
+    let storedPwd = import.meta.env.VITE_ADMIN_PASSWORD;
+    
+    // 2. Fallback via Define plugin (Injection directe de la valeur par Vite)
+    // Note: On utilise un bloc try/catch car si le remplacement ne se fait pas, 'process' n'existe pas dans le navigateur.
+    if (!storedPwd) {
+        try {
+            // @ts-ignore
+            storedPwd = process.env.VITE_ADMIN_PASSWORD;
+        } catch (e) {
+            // Ignorer l'erreur si process n'est pas défini
+        }
+    }
 
     if (!storedPwd) {
-        setErrorMsg("Aucun mot de passe configuré dans .env");
+        setErrorMsg("Erreur Config : VITE_ADMIN_PASSWORD non trouvé. Redémarrez le serveur.");
         return;
     }
 

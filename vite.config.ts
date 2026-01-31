@@ -7,8 +7,10 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     define: {
-      // Pour compatibilité si des libs tierces utilisent encore process.env (rare mais possible)
+      // Pour compatibilité si des libs tierces utilisent encore process.env
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
+      // Force l'injection du mot de passe Admin pour qu'il soit toujours accessible
+      'process.env.VITE_ADMIN_PASSWORD': JSON.stringify(env.VITE_ADMIN_PASSWORD || ''),
     },
     build: {
       outDir: 'dist',
