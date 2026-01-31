@@ -25,6 +25,7 @@ export interface Product {
   weightG?: number;
   stock?: number;
   rarity?: string;
+  active?: boolean;
 }
 
 export interface Partner {
