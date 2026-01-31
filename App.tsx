@@ -17,7 +17,8 @@ import CartSidebar from './components/CartSidebar';
 import Blog from './components/Blog';
 import { LiveContentProvider, useLiveContent } from './LiveContent';
 import { CartProvider } from './contexts/CartContext';
-import { Database, AlertTriangle, CheckCircle, WifiOff, ArrowUp } from 'lucide-react';
+import { ToastProvider } from './contexts/ToastContext';
+import { Database, AlertTriangle, CheckCircle, WifiOff, ArrowUp, Gamepad2, Gift, X } from 'lucide-react';
 
 const ConnectionStatus = () => {
   const { usingLive, error, loading } = useLiveContent();
@@ -66,6 +67,45 @@ const ScrollToTop = () => {
   );
 };
 
+// --- KONAMI CODE EASTER EGG ---
+const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+
+const EasterEggModal: React.FC<{ isOpen: boolean, onClose: () => void }> = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center px-4 bg-black/90 backdrop-blur-md animate-in zoom-in duration-300">
+       <div className="bg-[#151921] border-2 border-manu-orange rounded-3xl p-8 max-w-lg w-full text-center relative overflow-hidden shadow-[0_0_50px_rgba(243,156,18,0.3)]">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-manu-orange/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl"></div>
+          
+          <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white"><X/></button>
+          
+          <div className="flex justify-center mb-6">
+             <div className="w-20 h-20 bg-manu-orange text-black rounded-full flex items-center justify-center animate-bounce shadow-lg">
+                <Gamepad2 size={40} />
+             </div>
+          </div>
+          
+          <h2 className="text-3xl font-display font-bold text-white mb-2 uppercase tracking-wide">Cheat Code Activé !</h2>
+          <p className="text-gray-400 mb-6 text-sm">
+             Bien joué voyageur. Tu as découvert le secret des vrais gamers.
+             Voici une récompense légendaire pour ta prochaine commande.
+          </p>
+          
+          <div className="bg-black/50 border border-dashed border-gray-700 p-4 rounded-xl mb-6 relative group cursor-pointer" onClick={() => navigator.clipboard.writeText("KONAMI20")}>
+             <span className="text-gray-500 text-xs uppercase block mb-1">Code Promo Secret (-20%)</span>
+             <span className="text-2xl font-mono font-bold text-manu-orange tracking-[0.2em] group-hover:scale-110 transition-transform block">KONAMI20</span>
+             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">Copier</span>
+          </div>
+
+          <button onClick={onClose} className="bg-white text-black font-bold px-8 py-3 rounded-full hover:bg-manu-orange transition-colors w-full uppercase tracking-widest text-xs">
+             Réclamer mon butin
+          </button>
+       </div>
+    </div>
+  );
+};
+
 function AppContent() {
   const [isLegalOpen, setIsLegalOpen] = useState(false);
   const [legalSection, setLegalSection] = useState('mentions');
@@ -74,19 +114,37 @@ function AppContent() {
   // NAVIGATION : ajout de 'blog'
   const [currentView, setCurrentView] = useState<'home' | 'shop' | 'atelier' | 'partners' | 'blog'>('home');
 
+  // KONAMI STATE
+  const [konamiIndex, setKonamiIndex] = useState(0);
+  const [showEasterEgg, setShowEasterEgg] = useState(false);
+
   useEffect(() => {
     // Log de version pour débogage Vercel
-    console.log("MANU3D BUILD: V2.6 (Ultimate Polish)");
+    console.log("MANU3D BUILD: V3.1 (Ultimate Edition)");
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Admin Shortcut
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'a') {
         event.preventDefault();
         setIsAdminOpen(prev => !prev);
       }
+
+      // Konami Logic
+      if (event.key === KONAMI_CODE[konamiIndex]) {
+         const next = konamiIndex + 1;
+         if (next === KONAMI_CODE.length) {
+             setShowEasterEgg(true);
+             setKonamiIndex(0);
+         } else {
+             setKonamiIndex(next);
+         }
+      } else {
+         setKonamiIndex(0);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [konamiIndex]);
 
   const openLegal = (section: string) => {
     setLegalSection(section);
@@ -169,6 +227,7 @@ function AppContent() {
       />
       <CookieBanner onOpenPrivacy={() => openLegal('privacy')} />
       <AdminTool isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
+      <EasterEggModal isOpen={showEasterEgg} onClose={() => setShowEasterEgg(false)} />
       <ConnectionStatus />
       <ScrollToTop />
     </div>
@@ -178,9 +237,11 @@ function AppContent() {
 function App() {
   return (
     <LiveContentProvider>
-      <CartProvider>
-        <AppContent />
-      </CartProvider>
+      <ToastProvider>
+        <CartProvider>
+          <AppContent />
+        </CartProvider>
+      </ToastProvider>
     </LiveContentProvider>
   );
 }

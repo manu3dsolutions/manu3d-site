@@ -89,7 +89,7 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
             portfolioRes,
             creatorsRes,
             shippingRes,
-            articlesRes
+            articlesRes 
         ] = await Promise.all([
             supabase.from('products').select('*').eq('active', true).order('id', { ascending: true }),
             supabase.from('site_config').select('*'),

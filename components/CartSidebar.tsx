@@ -46,20 +46,44 @@ const CartSidebar: React.FC = () => {
   const [acceptCGV, setAcceptCGV] = useState(false);
   const [showLegal, setShowLegal] = useState(false); 
 
-  // --- LOGIQUE FILTRAGE POIDS ---
+  // --- LOGIQUE FILTRAGE POIDS (SMART FIX KG/G) ---
   const availableMethods = useMemo(() => {
-     return shippingMethods.filter(method => {
-         const min = method.minWeight ?? 0;
-         const max = method.maxWeight ?? 100000;
-         return cartWeight >= min && cartWeight <= max;
+     // 1. Filtrage Intelligent (Gère la confusion KG vs Grammes)
+     const validMethods = shippingMethods.filter(method => {
+         // Valeurs brutes de la BDD
+         const minRaw = method.minWeight ?? 0;
+         const maxRaw = (method.maxWeight && method.maxWeight > 0) ? method.maxWeight : 999999;
+
+         // CORRECTION AUTOMATIQUE D'UNITÉ :
+         // Si la limite max est < 100, on suppose que l'admin a entré des KILOS (ex: 2 pour 2kg).
+         // Sinon, on suppose que ce sont des GRAMMES (ex: 250 pour 250g).
+         // On convertit tout en grammes pour comparer avec le panier (qui est en grammes).
+         const maxInGrams = maxRaw <= 100 ? maxRaw * 1000 : maxRaw;
+         
+         // Idem pour le min
+         const minInGrams = minRaw <= 100 && minRaw > 0 ? minRaw * 1000 : minRaw;
+
+         return cartWeight >= minInGrams && cartWeight <= maxInGrams;
      });
+
+     // 2. FAIL-SAFE ULTIME : Si aucun transporteur ne matche (trou dans la grille ou bug),
+     // on renvoie TOUS les transporteurs pour ne jamais bloquer une vente.
+     if (validMethods.length === 0) {
+         console.warn("Aucun transporteur compatible trouvé pour ce poids. Activation du mode Fail-Safe.");
+         return shippingMethods;
+     }
+
+     return validMethods;
   }, [shippingMethods, cartWeight]);
 
   useEffect(() => {
-     if (checkoutStep === 'shipping' && availableMethods.length > 0) {
-         const currentIsValid = shippingMethod && availableMethods.find(m => m.id === shippingMethod.id);
-         if (!currentIsValid) {
-             setShippingMethod(availableMethods[0]);
+     if (checkoutStep === 'shipping') {
+         if (availableMethods.length > 0) {
+             const currentIsValid = shippingMethod && availableMethods.find(m => m.id === shippingMethod.id);
+             
+             if (!shippingMethod || !currentIsValid) {
+                 setShippingMethod(availableMethods[0]);
+             }
          }
      }
   }, [availableMethods, checkoutStep, shippingMethod, setShippingMethod]);
@@ -115,8 +139,7 @@ const CartSidebar: React.FC = () => {
         if (validateDetails()) setCheckoutStep('shipping');
     }
     else if (checkoutStep === 'shipping') {
-       if(!shippingMethod) { setErrorMsg('Veuillez choisir un mode de livraison.'); return; }
-       if(availableMethods.length === 0) { setErrorMsg('Aucun transporteur disponible.'); return; }
+       if(!shippingMethod && availableMethods.length > 0) { setErrorMsg('Veuillez choisir un mode de livraison.'); return; }
        setErrorMsg(null);
        setCheckoutStep('payment');
     }
@@ -154,7 +177,7 @@ const CartSidebar: React.FC = () => {
               shipping_address: `${customerInfo.address}, ${customerInfo.zip} ${customerInfo.city}`,
               items: cart,
               total: finalTotal,
-              shipping_method: shippingMethod?.name,
+              shipping_method: shippingMethod?.name || 'Standard',
               payment_method: method,
               payment_id: transactionId,
               status: 'paid'
@@ -258,8 +281,8 @@ const CartSidebar: React.FC = () => {
                                 </div>
                             ))}
                             
-                            <div className="flex justify-end text-[10px] text-gray-400 mt-2 gap-1 items-center">
-                                <Weight size={10} /> Poids estimé : {(cartWeight/1000).toFixed(2)} kg
+                            <div className="flex justify-end text-[10px] text-gray-400 mt-2 gap-1 items-center bg-gray-900/50 p-2 rounded-lg border border-gray-800">
+                                <Weight size={12} /> Poids total estimé : <span className="text-white font-bold">{(cartWeight/1000).toFixed(2)} kg</span>
                             </div>
 
                             <div className="mt-6 pt-6 border-t border-gray-800">
@@ -309,7 +332,11 @@ const CartSidebar: React.FC = () => {
             {/* ETAPE 3 : LIVRAISON */}
             {checkoutStep === 'shipping' && (
                 <div className="space-y-4 animate-in slide-in-from-right duration-300">
-                    <p className="text-sm text-gray-400 mb-4">Livraison à : <span className="text-white font-bold">{customerInfo.city} ({customerInfo.zip})</span></p>
+                    <div className="flex justify-between items-center text-sm text-gray-400 mb-2 bg-gray-900/50 p-3 rounded-lg border border-gray-800">
+                        <span>Poids colis : <span className="text-white font-bold">{(cartWeight/1000).toFixed(2)} kg</span></span>
+                        <span>Ville : <span className="text-white font-bold">{customerInfo.city}</span></span>
+                    </div>
+
                     {availableMethods.length > 0 ? availableMethods.map((method) => {
                         const cost = (method.basePrice + (cartWeight/1000 * method.pricePerKg));
                         const isFree = isFreeShipping && !method.isPickup; 
@@ -333,8 +360,8 @@ const CartSidebar: React.FC = () => {
                     }) : (
                         <div className="text-center p-6 border border-red-900/50 bg-red-900/10 rounded-xl">
                             <AlertCircle size={32} className="mx-auto text-red-500 mb-2" />
-                            <h4 className="text-white font-bold mb-1">Colis Hors Gabarit</h4>
-                            <p className="text-xs text-gray-400">Poids excessif ({(cartWeight/1000).toFixed(2)}kg). Contactez-nous pour un devis.</p>
+                            <h4 className="text-white font-bold mb-1">Aucun transporteur</h4>
+                            <p className="text-xs text-gray-400">Veuillez nous contacter pour une expédition sur mesure.</p>
                         </div>
                     )}
                 </div>
@@ -453,8 +480,8 @@ const CartSidebar: React.FC = () => {
                     {checkoutStep !== 'payment' && (
                         <button 
                             onClick={handleNextStep}
-                            className={`flex-1 bg-manu-orange text-black font-bold py-3 rounded-xl hover:bg-white transition-colors flex items-center justify-center gap-2 ${checkoutStep === 'shipping' && availableMethods.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            disabled={checkoutStep === 'shipping' && availableMethods.length === 0}
+                            className={`flex-1 bg-manu-orange text-black font-bold py-3 rounded-xl hover:bg-white transition-colors flex items-center justify-center gap-2 ${checkoutStep === 'shipping' && availableMethods.length === 0 ? '' : ''}`}
+                            
                         >
                             {checkoutStep === 'cart' && 'Commander'}
                             {checkoutStep === 'details' && 'Vers la Livraison'}

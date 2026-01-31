@@ -1,12 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ShoppingCart, Eye, Filter, User, Brush, X, Sparkles, ChevronRight, Star, Layers, Box, ShieldCheck, Heart, Users, CheckCircle, ExternalLink, Grid, Search, Info, Package, Truck, Clock, Tag, Image as ImageIcon, Zap } from 'lucide-react';
+import { ShoppingCart, Eye, Filter, User, Brush, X, Sparkles, ChevronRight, Star, Layers, Box, ShieldCheck, Heart, Users, CheckCircle, ExternalLink, Grid, Search, Info, Package, Truck, Clock, Tag, Image as ImageIcon, Zap, ArrowRight } from 'lucide-react';
 import { useLiveContent } from '../LiveContent';
 import { useCart } from '../contexts/CartContext';
+import { useToast } from '../contexts/ToastContext'; // Import du Toast
 import { Product } from '../types';
 
 const ProductList: React.FC = () => {
   const { products, creators, shippingMethods } = useLiveContent();
   const { addToCart } = useCart();
+  const { toast } = useToast();
   
   const [activeCategory, setActiveCategory] = useState('Tous');
   const [activeCreator, setActiveCreator] = useState<string | 'Tous'>('Tous');
@@ -31,10 +33,24 @@ const ProductList: React.FC = () => {
      return Array.from(tags).sort();
   }, [products]);
 
-  // Reset image index when opening modal
+  // Reset image index when opening modal AND Update SEO Title
   useEffect(() => {
-      if (selectedProduct) setActiveImageIndex(0);
+      if (selectedProduct) {
+          setActiveImageIndex(0);
+          document.title = `${selectedProduct.title} | Manu3D Boutique`;
+      } else {
+          document.title = `Boutique | Manu3D - Impression 3D Normandie`;
+      }
   }, [selectedProduct]);
+
+  // CROSS-SELLING: Produits similaires (même catégorie, excluant l'actuel)
+  const relatedProducts = useMemo(() => {
+      if (!selectedProduct) return [];
+      return products
+          .filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id)
+          .sort(() => 0.5 - Math.random()) // Shuffle aléatoire
+          .slice(0, 3); // Max 3 produits
+  }, [selectedProduct, products]);
 
   const toggleTag = (tag: string) => {
       setSelectedTags(prev => 
@@ -46,6 +62,7 @@ const ProductList: React.FC = () => {
       e?.stopPropagation();
       addToCart(product);
       setJustAddedId(product.id);
+      toast(`"${product.title}" ajouté au panier !`, 'success');
       setTimeout(() => setJustAddedId(null), 1500); // Reset animation state
   };
 
@@ -128,17 +145,6 @@ const ProductList: React.FC = () => {
                       </div>
                   </div>
 
-                  {/* Tags in Modal */}
-                  {selectedProduct.tags && selectedProduct.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-6">
-                          {selectedProduct.tags.map(tag => (
-                              <span key={tag} className="text-[10px] bg-white/5 border border-white/10 text-gray-300 px-3 py-1 rounded-full flex items-center gap-1 hover:bg-white/10 transition-colors cursor-default">
-                                  <Tag size={10} /> {tag}
-                              </span>
-                          ))}
-                      </div>
-                  )}
-
                   <div className="space-y-6 mb-8 flex-1">
                      <div>
                          <h4 className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2 mb-2">Description</h4>
@@ -154,18 +160,36 @@ const ProductList: React.FC = () => {
                            <ShieldCheck size={16} className="text-green-400"/> 
                            Garantie casse & conformité
                         </div>
-                        {selectedProduct.creatorId && creators.find(c => c.id === selectedProduct.creatorId) && (
-                           <div className="flex items-center gap-3 text-sm text-gray-400 pt-3 border-t border-white/5 mt-3">
-                              <Brush size={16} className="text-purple-400"/> 
-                              Design Officiel : <span className="text-white font-bold">{creators.find(c => c.id === selectedProduct.creatorId)?.name}</span>
-                           </div>
-                        )}
                      </div>
+
+                     {/* CROSS SELLING AREA - KEY FOR INCREASING AOV */}
+                     {relatedProducts.length > 0 && (
+                        <div className="pt-6 border-t border-white/5">
+                            <h4 className="text-xs font-bold text-white uppercase mb-3 flex items-center gap-2">
+                                <Sparkles size={12} className="text-manu-orange"/> Complétez votre collection
+                            </h4>
+                            <div className="grid grid-cols-3 gap-3">
+                                {relatedProducts.map(rel => (
+                                    <div 
+                                        key={rel.id} 
+                                        className="bg-black/40 p-2 rounded-lg border border-gray-800 hover:border-manu-orange/50 cursor-pointer transition-all group/related"
+                                        onClick={() => setSelectedProduct(rel)}
+                                    >
+                                        <div className="aspect-square rounded-md overflow-hidden mb-2">
+                                            <img src={rel.image} className="w-full h-full object-cover opacity-80 group-hover/related:scale-110 transition-transform duration-500" alt={rel.title} />
+                                        </div>
+                                        <div className="text-[10px] text-gray-400 truncate font-bold group-hover/related:text-white">{rel.title}</div>
+                                        <div className="text-[10px] text-manu-orange">{rel.price}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                     )}
                   </div>
 
                   <div className="mt-auto pt-4">
                      <button 
-                        onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}
+                        onClick={() => { handleAddToCart(selectedProduct); setSelectedProduct(null); }}
                         className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-manu-orange transition-all flex items-center justify-center gap-3 shadow-xl transform hover:scale-[1.02] hover:shadow-manu-orange/20"
                      >
                         <ShoppingCart size={20} /> Ajouter au panier
