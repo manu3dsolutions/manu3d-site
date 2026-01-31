@@ -287,6 +287,9 @@ const AdminTool: React.FC<AdminToolProps> = ({ isOpen, onClose }) => {
   };
   const deleteCoupon = async (id: number) => { if(!confirm("Supprimer ?")) return; await supabase.from('coupons').delete().eq('id', id); fetchCoupons(); };
 
+  // --- EARLY EXIT IF CLOSED ---
+  if (!isOpen) return null;
+
   // --- LOGIN SCREEN ---
   if (!isAuthenticated) {
      return (
