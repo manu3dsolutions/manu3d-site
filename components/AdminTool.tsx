@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Copy, Check, Package, Image as ImageIcon, Sparkles, MessageSquare, Briefcase, Users, Lock, Unlock, Eye, ShoppingCart, Gem, Shield, Star, ExternalLink, Home, RefreshCw, Megaphone, Search, Globe, Instagram, Loader2, Bot, Wand2, Ticket, Trash2, Database, Save, Beaker, Coins, AlertTriangle, FileText, Truck, Clock, Plus, Edit, MoreHorizontal, ChevronDown, CheckCircle, Settings, Scale } from 'lucide-react';
+import { X, Copy, Check, Package, Image as ImageIcon, Sparkles, MessageSquare, Briefcase, Users, Lock, Unlock, Eye, ShoppingCart, Gem, Shield, Star, ExternalLink, Home, RefreshCw, Megaphone, Search, Globe, Instagram, Loader2, Bot, Wand2, Ticket, Trash2, Database, Save, Beaker, Coins, AlertTriangle, FileText, Truck, Clock, Plus, Edit, MoreHorizontal, ChevronDown, CheckCircle, Settings, Scale, LogOut } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { Coupon, Product, Article, ShippingMethod, GlobalSiteConfig } from '../types';
 import { useLiveContent, PrintingMaterial } from '../LiveContent';
@@ -309,7 +309,10 @@ const AdminTool: React.FC<AdminToolProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-2 py-4 md:px-4 bg-black/90 backdrop-blur-sm animate-in zoom-in-95 duration-200">
-      <div className="bg-[#151921] w-full max-w-7xl rounded-2xl border border-manu-orange shadow-2xl flex flex-col h-full max-h-[95vh] overflow-hidden relative">
+      {/* Click outside to close */}
+      <div className="absolute inset-0" onClick={onClose} />
+      
+      <div className="bg-[#151921] w-full max-w-7xl rounded-2xl border border-manu-orange shadow-2xl flex flex-col h-full max-h-[95vh] overflow-hidden relative z-10">
         
         {/* Header */}
         <div className="bg-manu-orange text-black p-4 flex justify-between items-center flex-shrink-0">
@@ -355,6 +358,16 @@ const AdminTool: React.FC<AdminToolProps> = ({ isOpen, onClose }) => {
                    )}
                 </button>
              ))}
+
+             <div className="mt-auto border-t border-gray-800 pt-2 space-y-1">
+                <button 
+                  onClick={onClose}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-red-900/20 text-red-400 hover:text-red-300 transition-colors"
+                >
+                   <LogOut size={20} /> 
+                   <span className="hidden md:block text-sm font-bold">Déconnexion</span>
+                </button>
+             </div>
           </div>
 
           {/* Main Content Area */}
