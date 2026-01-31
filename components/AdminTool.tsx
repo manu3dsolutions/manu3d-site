@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { X, Copy, Check, Package, Image as ImageIcon, Sparkles, MessageSquare, Briefcase, Users, Lock, Unlock, Eye, ShoppingCart, Gem, Shield, Star, ExternalLink, Home, RefreshCw, Megaphone, Search, Globe, Instagram, Loader2, Bot, Wand2, Ticket, Trash2, Database, Save, Beaker, Coins, AlertTriangle, FileText, Truck, Clock, Plus, Edit, MoreHorizontal, ChevronDown, CheckCircle, Settings, Scale, LogOut } from 'lucide-react';
+import { X, Copy, Check, Package, Image as ImageIcon, Sparkles, MessageSquare, Briefcase, Users, Lock, Unlock, Eye, ShoppingCart, Gem, Shield, Star, ExternalLink, Home, RefreshCw, Megaphone, Search, Globe, Instagram, Loader2, Bot, Wand2, Ticket, Trash2, Database, Save, Beaker, Coins, AlertTriangle, FileText, Truck, Clock, Plus, Edit, MoreHorizontal, ChevronDown, CheckCircle, Settings, Scale, LogOut, UploadCloud } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { Coupon, Product, Article, ShippingMethod, GlobalSiteConfig } from '../types';
 import { useLiveContent, PrintingMaterial } from '../LiveContent';
 import { useToast } from '../contexts/ToastContext';
 import { hashPassword, isHash } from '../utils/security';
+import { 
+    PRODUCTS as DEFAULT_PRODUCTS, 
+    PARTNERS as DEFAULT_PARTNERS, 
+    REVIEWS as DEFAULT_REVIEWS, 
+    PORTFOLIO_ITEMS as DEFAULT_PORTFOLIO, 
+    ARTICLES as DEFAULT_ARTICLES,
+    SITE_CONFIG_DEFAULT
+} from '../constants';
 
 // --- TYPES INTERNES ---
 interface Order {
@@ -26,7 +34,7 @@ interface AdminToolProps {
 }
 
 const AdminTool: React.FC<AdminToolProps> = ({ isOpen, onClose }) => {
-  const { refreshData, printingMaterials, hero, promo, siteConfig, shippingMethods } = useLiveContent();
+  const { refreshData, printingMaterials, hero, promo, siteConfig, shippingMethods, usingLive } = useLiveContent();
   const { toast } = useToast();
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -34,7 +42,7 @@ const AdminTool: React.FC<AdminToolProps> = ({ isOpen, onClose }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [securityWarning, setSecurityWarning] = useState<string | null>(null);
   
-  const [activeTab, setActiveTab] = useState<'home' | 'config' | 'products' | 'orders' | 'materials' | 'coupons' | 'blog' | 'shipping'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'config' | 'products' | 'orders' | 'materials' | 'coupons' | 'blog' | 'shipping' | 'maintenance'>('home');
   const [isSaving, setIsSaving] = useState(false);
 
   // --- DATA STATES ---
@@ -145,6 +153,94 @@ const AdminTool: React.FC<AdminToolProps> = ({ isOpen, onClose }) => {
   const fetchShipping = async () => {
       const { data } = await supabase.from('shipping_methods').select('*').order('base_price', { ascending: true });
       if(data) setShippingList(data as ShippingMethod[]);
+  };
+
+  // --- ACTIONS: SEED DATABASE ---
+  const seedDatabase = async () => {
+      if(!confirm("ATTENTION : Cela va injecter les données par défaut (Pikachu, etc.) dans votre base Supabase. Continuer ?")) return;
+      setIsSaving(true);
+      try {
+          // 1. PRODUCTS
+          for (const p of DEFAULT_PRODUCTS) {
+              await supabase.from('products').upsert({
+                  title: p.title,
+                  category: p.category,
+                  price: p.price,
+                  image: p.image,
+                  description: p.description,
+                  tags: p.tags,
+                  is_new: p.isNew || false,
+                  active: true,
+                  stock: 5,
+                  weight_g: 100
+              }, { onConflict: 'title' }); // Évite les doublons basés sur le titre
+          }
+
+          // 2. PARTNERS
+          for (const p of DEFAULT_PARTNERS) {
+              await supabase.from('partners').upsert({
+                  name: p.name,
+                  logo_url: p.logoUrl,
+                  description: p.description,
+                  url: p.url,
+                  display_order: 0
+              }, { onConflict: 'name' });
+          }
+
+          // 3. REVIEWS
+          for (const r of DEFAULT_REVIEWS) {
+              await supabase.from('reviews').upsert({
+                  name: r.name,
+                  role: r.role,
+                  rating: r.rating,
+                  text: r.text,
+                  item_purchased: r.item,
+                  display_date: r.date
+              });
+          }
+
+          // 4. PORTFOLIO
+          for (const p of DEFAULT_PORTFOLIO) {
+              await supabase.from('portfolio').upsert({
+                  title: p.title,
+                  description: p.description,
+                  image: p.image
+              });
+          }
+
+           // 5. ARTICLES
+           for (const a of DEFAULT_ARTICLES) {
+              await supabase.from('articles').upsert({
+                  title: a.title,
+                  excerpt: a.excerpt,
+                  category: a.category,
+                  image: a.image,
+                  author: a.author,
+                  read_time: a.readTime
+              });
+          }
+
+          // 6. SITE CONFIG
+          const updates = [
+              { key: 'hero_title1', value: editHero.titleLine1 },
+              { key: 'hero_title2', value: editHero.titleLine2 },
+              { key: 'hero_subtitle', value: editHero.subtitle },
+              { key: 'hero_badge', value: editHero.badge },
+              { key: 'promo_text', value: editPromo.text },
+              { key: 'promo_active', value: String(editPromo.isActive) }
+          ];
+          await supabase.from('site_config').upsert(updates);
+
+          toast("Base de données initialisée avec succès !", "success");
+          await refreshData();
+          fetchAllData();
+
+      } catch (err) {
+          console.error(err);
+          toast("Erreur lors de l'initialisation", "error");
+      } finally {
+          setIsSaving(false);
+      }
   };
 
   // --- ACTIONS: HOME & CONFIG ---
@@ -316,9 +412,16 @@ const AdminTool: React.FC<AdminToolProps> = ({ isOpen, onClose }) => {
         
         {/* Header */}
         <div className="bg-manu-orange text-black p-4 flex justify-between items-center flex-shrink-0">
-          <h2 className="font-display font-bold text-lg md:text-xl flex items-center gap-2">
-            <Unlock size={20} /> CMS Ultimate <span className="text-xs bg-black/20 px-2 py-0.5 rounded">V3.5</span>
-          </h2>
+          <div className="flex items-center gap-4">
+              <h2 className="font-display font-bold text-lg md:text-xl flex items-center gap-2">
+                <Unlock size={20} /> CMS Ultimate <span className="text-xs bg-black/20 px-2 py-0.5 rounded">V3.6</span>
+              </h2>
+              {usingLive ? (
+                  <span className="flex items-center gap-1 text-xs font-bold bg-green-500 text-white px-2 py-1 rounded-full"><CheckCircle size={12}/> ONLINE</span>
+              ) : (
+                  <span className="flex items-center gap-1 text-xs font-bold bg-gray-800 text-white px-2 py-1 rounded-full border border-black/20"><Database size={12}/> LOCAL (BDD VIDE)</span>
+              )}
+          </div>
           <button onClick={onClose} className="hover:bg-white/20 p-1 rounded transition-colors"><X size={24} /></button>
         </div>
 
@@ -343,6 +446,7 @@ const AdminTool: React.FC<AdminToolProps> = ({ isOpen, onClose }) => {
                { id: 'blog', label: 'Blog / Articles', icon: FileText, color: 'text-purple-400' },
                { id: 'materials', label: 'Matériaux & Prix', icon: Beaker, color: 'text-green-400' },
                { id: 'coupons', label: 'Codes Promo', icon: Ticket, color: 'text-yellow-400' },
+               { id: 'maintenance', label: 'Maintenance BDD', icon: Database, color: 'text-red-400' },
              ].map((item) => (
                 <button 
                   key={item.id}
@@ -373,9 +477,49 @@ const AdminTool: React.FC<AdminToolProps> = ({ isOpen, onClose }) => {
           {/* Main Content Area */}
           <div className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar bg-[#151921] relative">
             
+            {/* --- TAB: MAINTENANCE (SEED) --- */}
+            {activeTab === 'maintenance' && (
+                <div className="space-y-8 max-w-3xl mx-auto text-center">
+                    <div className="bg-red-900/10 border border-red-500/30 p-8 rounded-2xl">
+                        <Database size={48} className="mx-auto text-red-500 mb-4" />
+                        <h3 className="text-2xl font-bold text-white mb-2">État de la Base de Données</h3>
+                        {usingLive ? (
+                            <p className="text-green-400 font-bold mb-6">✅ Connectée et Synchronisée</p>
+                        ) : (
+                            <div className="mb-6">
+                                <p className="text-red-400 font-bold">⚠️ Connectée mais Vide (Mode Local Actif)</p>
+                                <p className="text-gray-400 text-sm mt-2">La connexion Supabase fonctionne, mais aucune donnée n'a été trouvée. Le site utilise donc les données de secours locales.</p>
+                            </div>
+                        )}
+                        
+                        <button 
+                            onClick={seedDatabase} 
+                            disabled={isSaving}
+                            className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded-xl shadow-lg flex items-center gap-3 mx-auto transition-transform hover:scale-105"
+                        >
+                            {isSaving ? <Loader2 className="animate-spin" /> : <UploadCloud size={24} />}
+                            Initialiser la Base de Données (Seed)
+                        </button>
+                        <p className="text-xs text-gray-500 mt-4 max-w-md mx-auto">
+                            Cette action va envoyer tous les produits, partenaires et configurations par défaut (Pikachu, etc.) vers votre projet Supabase.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* --- TAB: HOME --- */}
             {activeTab === 'home' && (
                 <div className="space-y-8 max-w-3xl mx-auto">
+                    {!usingLive && (
+                        <div className="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-xl flex items-center gap-4 animate-pulse">
+                            <AlertTriangle className="text-yellow-500" size={24}/>
+                            <div className="flex-1">
+                                <h4 className="text-yellow-500 font-bold">Base de données vide</h4>
+                                <p className="text-xs text-gray-300">Vous êtes en mode démo. Allez dans l'onglet <strong>Maintenance BDD</strong> pour injecter les données.</p>
+                            </div>
+                            <button onClick={() => setActiveTab('maintenance')} className="bg-yellow-500 text-black px-4 py-2 rounded font-bold text-xs">Corriger</button>
+                        </div>
+                    )}
                     <div className="bg-black/30 p-6 rounded-xl border border-gray-700">
                         <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Megaphone size={20}/> Bandeau Promo</h3>
                         <div className="space-y-4">

@@ -122,7 +122,7 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
           safeFetch(supabase.from('articles').select('*').order('date', { ascending: false }))
       ]);
 
-      // Mise à jour des produits si trouvés
+      // Si on a récupéré des produits, on remplace ceux par défaut
       if (productsData && productsData.length > 0) {
           const mappedProducts = productsData.map((p: any) => ({
               id: p.id,
@@ -142,6 +142,9 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
           setProducts(mappedProducts);
           setUsingLive(true); // Succès !
           setError(null);
+      } else {
+         // Connexion OK mais base vide
+         console.log("Supabase : Connexion OK mais base de données vide. Utilisation données locales.");
       }
 
       // Mise à jour Config
