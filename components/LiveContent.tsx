@@ -13,7 +13,6 @@ import {
 import { Product, Partner, Review, PortfolioItem, Creator, ShippingMethod, GlobalSiteConfig, Article } from '../types';
 import { supabase } from '../supabaseClient';
 
-// Interface étendue pour inclure les matériaux
 export interface PrintingMaterial {
   id: string;
   name: string;
@@ -63,6 +62,7 @@ const LiveContentContext = createContext<LiveContentContextType>({
 });
 
 export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Initialisation avec les valeurs par défaut (hardcodées)
   const [hero, setHero] = useState(DEFAULT_HERO);
   const [promo, setPromo] = useState(DEFAULT_PROMO);
   const [assets, setAssets] = useState(DEFAULT_ASSETS);
@@ -81,44 +81,33 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
-    // Utilisation ultra-sécurisée de import.meta.env
-    const env = (import.meta.env || {}) as any;
-    const url = env.VITE_SUPABASE_URL;
-    
-    if (!url || url === '' || url.includes('placeholder')) {
+    // Si l'URL Supabase n'est pas configurée correctement (ex: placeholder), on arrête tout de suite
+    // et on garde les données par défaut sans erreur.
+    if (!supabase || (supabase as any).supabaseUrl?.includes('placeholder')) {
+        console.log("Mode Démo : Utilisation des données locales.");
         return;
     }
 
     setLoading(true);
-    setError(null);
-
-    // Fonction helper pour récupérer des données sans faire planter tout le site si une table manque
-    const safeFetch = async (query: any, fallbackValue: any = []) => {
+    
+    // Fonction magique "Safe Fetch" : si une requête échoue, elle renvoie un tableau vide
+    // au lieu de faire planter toute la fonction.
+    const safeFetch = async (query: any) => {
         try {
             const { data, error } = await query;
-            if (error) {
-                console.warn(`⚠️ Supabase Warning: ${error.message}`);
-                return fallbackValue;
-            }
+            if (error) throw error;
             return data;
         } catch (e) {
-            console.warn("⚠️ Fetch Error:", e);
-            return fallbackValue;
+            // On ignore l'erreur silencieusement pour que le reste du site continue de marcher
+            return [];
         }
     };
 
     try {
-      // 1. CHARGEMENT PARALLÈLE ROBUSTE
+      // Chargement parallèle insensible aux pannes individuelles
       const [
-          productsData, 
-          configData, 
-          partnersData, 
-          reviewsData, 
-          portfolioData,
-          creatorsData,
-          shippingData,
-          materialsData,
-          articlesData
+          productsData, configData, partnersData, reviewsData, 
+          portfolioData, creatorsData, shippingData, materialsData, articlesData
       ] = await Promise.all([
           safeFetch(supabase.from('products').select('*').eq('active', true).order('id', { ascending: true })),
           safeFetch(supabase.from('site_config').select('*')),
@@ -131,9 +120,9 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
           safeFetch(supabase.from('articles').select('*').order('date', { ascending: false }))
       ]);
 
-      // 2. PRODUITS
+      // Si on a récupéré des produits, on remplace ceux par défaut
       if (productsData && productsData.length > 0) {
-          const mappedProducts: Product[] = productsData.map((p: any) => ({
+          const mappedProducts = productsData.map((p: any) => ({
               id: p.id,
               title: p.title,
               category: p.category || 'Figurine',
@@ -149,9 +138,10 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
               stock: p.stock || 5
           }));
           setProducts(mappedProducts);
+          setUsingLive(true); // On considère qu'on est "en ligne" seulement si on a des produits
       }
 
-      // 3. CONFIG GLOBALE
+      // Traitement Config
       if (configData && configData.length > 0) {
           const newHero = { ...DEFAULT_HERO };
           const newPromo = { ...DEFAULT_PROMO };
@@ -166,18 +156,12 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
               if (row.key === 'hero_badge') newHero.badge = row.value;
               if (row.key === 'hero_cta_primary') newHero.ctaPrimary = row.value;
               if (row.key === 'hero_cta_secondary') newHero.ctaSecondary = row.value;
-              
               if (row.key === 'promo_text') newPromo.text = row.value;
               if (row.key === 'promo_link') newPromo.link = row.value;
               if (row.key === 'promo_active') newPromo.isActive = row.value === 'true';
-
               if (row.key === 'logo_url') newAssets.logo = row.value;
               if (row.key === 'hero_video_url') newAssets.heroVideo = row.value;
-
               if (row.key === 'shipping_free_threshold') newSiteConfig.shippingFreeThreshold = parseFloat(row.value);
-              if (row.key === 'invoice_company_name') newSiteConfig.invoice.companyName = row.value;
-              if (row.key === 'invoice_siret') newSiteConfig.invoice.siret = row.value;
-              if (row.key === 'invoice_email') newSiteConfig.invoice.email = row.value;
           });
           setHero(newHero);
           setPromo(newPromo);
@@ -185,35 +169,22 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
           setSiteConfig(newSiteConfig);
       }
 
-      // 4. MATERIAUX
-      if (materialsData && materialsData.length > 0) {
-          const mappedMats = materialsData.map((m: any) => ({
-              id: m.id,
-              name: m.name,
-              type: m.type,
-              density: Number(m.density),
-              cost_per_gram: Number(m.cost_per_gram),
-              color_hex: m.color_hex || 'FFFFFF',
-              active: m.active
-          }));
-          setPrintingMaterials(mappedMats);
+      // Autres données (Mapping simple)
+      if (partnersData.length) setPartners(partnersData.map((p: any) => ({...p, logoUrl: p.logo_url})));
+      if (reviewsData.length) setReviews(reviewsData.map((r: any) => ({...r, item: r.item_purchased, date: r.display_date || 'Récemment'})));
+      if (portfolioData.length) setPortfolio(portfolioData);
+      if (creatorsData.length) setCreators(creatorsData.map((c: any) => ({...c, avatarUrl: c.avatar_url, bannerUrl: c.banner_url, websiteUrl: c.website_url, socialInstagram: c.social_instagram})));
+      if (shippingData.length) setShippingMethods(shippingData.map((s: any) => ({...s, basePrice: s.base_price, pricePerKg: s.price_per_kg, isPickup: s.is_pickup, estimatedDays: s.estimated_days, minWeight: s.min_weight, maxWeight: s.max_weight})));
+      if (materialsData.length) {
+          setPrintingMaterials(materialsData.map((m: any) => ({
+              id: m.id, name: m.name, type: m.type, density: Number(m.density), cost_per_gram: Number(m.cost_per_gram), color_hex: m.color_hex || 'FFFFFF', active: m.active
+          })));
       }
+      if (articlesData.length) setArticles(articlesData.map((a: any) => ({...a, date: new Date(a.date).toLocaleDateString('fr-FR'), readTime: a.read_time})));
 
-      // 5. AUTRES DONNEES
-      if (partnersData && partnersData.length > 0) setPartners(partnersData.map((p: any) => ({...p, logoUrl: p.logo_url})));
-      if (reviewsData && reviewsData.length > 0) setReviews(reviewsData.map((r: any) => ({...r, item: r.item_purchased, date: r.display_date || 'Récemment'})));
-      if (portfolioData && portfolioData.length > 0) setPortfolio(portfolioData);
-      if (creatorsData && creatorsData.length > 0) setCreators(creatorsData.map((c: any) => ({...c, avatarUrl: c.avatar_url, bannerUrl: c.banner_url, websiteUrl: c.website_url, socialInstagram: c.social_instagram})));
-      if (shippingData && shippingData.length > 0) setShippingMethods(shippingData.map((s: any) => ({...s, basePrice: s.base_price, pricePerKg: s.price_per_kg, isPickup: s.is_pickup, estimatedDays: s.estimated_days, minWeight: s.min_weight, maxWeight: s.max_weight})));
-      if (articlesData && articlesData.length > 0) setArticles(articlesData.map((a: any) => ({...a, date: new Date(a.date).toLocaleDateString('fr-FR'), readTime: a.read_time})));
-
-      setUsingLive(true);
-    } catch (err: any) {
-      console.error("❌ ERREUR CRITIQUE:", err.message);
-      // On ne set pas d'erreur globale si on a pu charger au moins les produits par défaut du code
-      if (products.length === 0) {
-          setError("Erreur de chargement.");
-      }
+    } catch (err) {
+      // En cas de crash total, on ne fait rien, les données par défaut sont déjà là.
+      console.warn("Utilisation du mode secours (Données locales)");
     } finally {
       setLoading(false);
     }
