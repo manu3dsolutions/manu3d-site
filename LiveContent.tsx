@@ -37,7 +37,7 @@ interface LiveContentContextType {
   siteConfig: GlobalSiteConfig;
   printingMaterials: PrintingMaterial[];
   articles: Article[];
-  refreshData: () => Promise<void>; // Nouvelle fonction pour recharger sans F5
+  refreshData: () => Promise<void>; 
   loading: boolean;
   usingLive: boolean;
   error: string | null;
@@ -92,32 +92,48 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLoading(true);
     setError(null);
 
+    // Fonction helper pour récupérer des données sans faire planter tout le site si une table manque
+    const safeFetch = async (query: any, fallbackValue: any = []) => {
+        try {
+            const { data, error } = await query;
+            if (error) {
+                console.warn(`⚠️ Supabase Warning: ${error.message}`);
+                return fallbackValue;
+            }
+            return data;
+        } catch (e) {
+            console.warn("⚠️ Fetch Error:", e);
+            return fallbackValue;
+        }
+    };
+
     try {
+      // 1. CHARGEMENT PARALLÈLE ROBUSTE
       const [
-          productsRes, 
-          configRes, 
-          partnersRes, 
-          reviewsRes, 
-          portfolioRes,
-          creatorsRes,
-          shippingRes,
-          materialsRes,
-          articlesRes
+          productsData, 
+          configData, 
+          partnersData, 
+          reviewsData, 
+          portfolioData,
+          creatorsData,
+          shippingData,
+          materialsData,
+          articlesData
       ] = await Promise.all([
-          supabase.from('products').select('*').eq('active', true).order('id', { ascending: true }),
-          supabase.from('site_config').select('*'),
-          supabase.from('partners').select('*').order('display_order', { ascending: true }),
-          supabase.from('reviews').select('*').order('id', { ascending: false }),
-          supabase.from('portfolio').select('*').order('id', { ascending: true }),
-          supabase.from('creators').select('*'),
-          supabase.from('shipping_methods').select('*').order('base_price', { ascending: true }),
-          supabase.from('printing_materials').select('*').eq('active', true),
-          supabase.from('articles').select('*').order('date', { ascending: false })
+          safeFetch(supabase.from('products').select('*').eq('active', true).order('id', { ascending: true })),
+          safeFetch(supabase.from('site_config').select('*')),
+          safeFetch(supabase.from('partners').select('*').order('display_order', { ascending: true })),
+          safeFetch(supabase.from('reviews').select('*').order('id', { ascending: false })),
+          safeFetch(supabase.from('portfolio').select('*').order('id', { ascending: true })),
+          safeFetch(supabase.from('creators').select('*')),
+          safeFetch(supabase.from('shipping_methods').select('*').order('base_price', { ascending: true })),
+          safeFetch(supabase.from('printing_materials').select('*').eq('active', true)),
+          safeFetch(supabase.from('articles').select('*').order('date', { ascending: false }))
       ]);
 
-      // 1. PRODUITS
-      if (productsRes.data && productsRes.data.length > 0) {
-          const mappedProducts: Product[] = productsRes.data.map((p: any) => ({
+      // 2. PRODUITS
+      if (productsData && productsData.length > 0) {
+          const mappedProducts: Product[] = productsData.map((p: any) => ({
               id: p.id,
               title: p.title,
               category: p.category || 'Figurine',
@@ -135,15 +151,15 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
           setProducts(mappedProducts);
       }
 
-      // 2. CONFIG GLOBALE
-      if (configRes.data && configRes.data.length > 0) {
+      // 3. CONFIG GLOBALE
+      if (configData && configData.length > 0) {
           const newHero = { ...DEFAULT_HERO };
           const newPromo = { ...DEFAULT_PROMO };
           const newAssets = { ...DEFAULT_ASSETS };
           const newSiteConfig = { ...SITE_CONFIG_DEFAULT };
           newSiteConfig.invoice = { ...SITE_CONFIG_DEFAULT.invoice };
 
-          configRes.data.forEach((row: any) => {
+          configData.forEach((row: any) => {
               if (row.key === 'hero_title1') newHero.titleLine1 = row.value;
               if (row.key === 'hero_title2') newHero.titleLine2 = row.value;
               if (row.key === 'hero_subtitle') newHero.subtitle = row.value;
@@ -169,9 +185,9 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
           setSiteConfig(newSiteConfig);
       }
 
-      // 3. MATERIAUX (NOUVEAU)
-      if (materialsRes.data) {
-          const mappedMats = materialsRes.data.map((m: any) => ({
+      // 4. MATERIAUX
+      if (materialsData && materialsData.length > 0) {
+          const mappedMats = materialsData.map((m: any) => ({
               id: m.id,
               name: m.name,
               type: m.type,
@@ -183,18 +199,21 @@ export const LiveContentProvider: React.FC<{ children: React.ReactNode }> = ({ c
           setPrintingMaterials(mappedMats);
       }
 
-      // 4. AUTRES DONNEES
-      if (partnersRes.data) setPartners(partnersRes.data.map((p: any) => ({...p, logoUrl: p.logo_url})));
-      if (reviewsRes.data) setReviews(reviewsRes.data.map((r: any) => ({...r, item: r.item_purchased, date: r.display_date || 'Récemment'})));
-      if (portfolioRes.data) setPortfolio(portfolioRes.data);
-      if (creatorsRes.data) setCreators(creatorsRes.data.map((c: any) => ({...c, avatarUrl: c.avatar_url, bannerUrl: c.banner_url, websiteUrl: c.website_url, socialInstagram: c.social_instagram})));
-      if (shippingRes.data) setShippingMethods(shippingRes.data.map((s: any) => ({...s, basePrice: s.base_price, pricePerKg: s.price_per_kg, isPickup: s.is_pickup, estimatedDays: s.estimated_days, minWeight: s.min_weight, maxWeight: s.max_weight})));
-      if (articlesRes.data) setArticles(articlesRes.data.map((a: any) => ({...a, date: new Date(a.date).toLocaleDateString('fr-FR'), readTime: a.read_time})));
+      // 5. AUTRES DONNEES
+      if (partnersData && partnersData.length > 0) setPartners(partnersData.map((p: any) => ({...p, logoUrl: p.logo_url})));
+      if (reviewsData && reviewsData.length > 0) setReviews(reviewsData.map((r: any) => ({...r, item: r.item_purchased, date: r.display_date || 'Récemment'})));
+      if (portfolioData && portfolioData.length > 0) setPortfolio(portfolioData);
+      if (creatorsData && creatorsData.length > 0) setCreators(creatorsData.map((c: any) => ({...c, avatarUrl: c.avatar_url, bannerUrl: c.banner_url, websiteUrl: c.website_url, socialInstagram: c.social_instagram})));
+      if (shippingData && shippingData.length > 0) setShippingMethods(shippingData.map((s: any) => ({...s, basePrice: s.base_price, pricePerKg: s.price_per_kg, isPickup: s.is_pickup, estimatedDays: s.estimated_days, minWeight: s.min_weight, maxWeight: s.max_weight})));
+      if (articlesData && articlesData.length > 0) setArticles(articlesData.map((a: any) => ({...a, date: new Date(a.date).toLocaleDateString('fr-FR'), readTime: a.read_time})));
 
       setUsingLive(true);
     } catch (err: any) {
-      console.error("❌ ERREUR SUPABASE:", err.message);
-      setError("Erreur de chargement des données.");
+      console.error("❌ ERREUR CRITIQUE:", err.message);
+      // On ne set pas d'erreur globale si on a pu charger au moins les produits par défaut du code
+      if (products.length === 0) {
+          setError("Erreur de chargement.");
+      }
     } finally {
       setLoading(false);
     }
