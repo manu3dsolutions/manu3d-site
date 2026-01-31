@@ -11,14 +11,13 @@ import LegalDocs from './components/LegalDocs';
 import CookieBanner from './components/CookieBanner';
 import Testimonials from './components/Testimonials';
 import Location from './components/Location';
-import AdminTool from './components/AdminTool'; 
 import PromoBanner from './components/PromoBanner'; 
 import CartSidebar from './components/CartSidebar';
 import Blog from './components/Blog';
 import { LiveContentProvider, useLiveContent } from './LiveContent';
 import { CartProvider } from './contexts/CartContext';
 import { ToastProvider } from './contexts/ToastContext';
-import { Database, AlertTriangle, CheckCircle, WifiOff, ArrowUp, Gamepad2, Gift, X } from 'lucide-react';
+import { Database, AlertTriangle, CheckCircle, WifiOff, ArrowUp, Gamepad2, X } from 'lucide-react';
 
 const ConnectionStatus = () => {
   const { usingLive, error, loading } = useLiveContent();
@@ -109,9 +108,8 @@ const EasterEggModal: React.FC<{ isOpen: boolean, onClose: () => void }> = ({ is
 function AppContent() {
   const [isLegalOpen, setIsLegalOpen] = useState(false);
   const [legalSection, setLegalSection] = useState('mentions');
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
   
-  // NAVIGATION : ajout de 'blog'
+  // NAVIGATION
   const [currentView, setCurrentView] = useState<'home' | 'shop' | 'atelier' | 'partners' | 'blog'>('home');
 
   // KONAMI STATE
@@ -119,16 +117,7 @@ function AppContent() {
   const [showEasterEgg, setShowEasterEgg] = useState(false);
 
   useEffect(() => {
-    // Log de version pour débogage Vercel
-    console.log("MANU3D BUILD: V3.1 (Ultimate Edition)");
-
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Admin Shortcut
-      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'a') {
-        event.preventDefault();
-        setIsAdminOpen(prev => !prev);
-      }
-
       // Konami Logic
       if (event.key === KONAMI_CODE[konamiIndex]) {
          const next = konamiIndex + 1;
@@ -178,9 +167,7 @@ function AppContent() {
                 </p>
              </div>
              
-             {/* SECTION: DEMANDE MANUELLE (Upload Fichier) */}
              <AtelierRequest />
-             
              <Services />
              <Portfolio />
              <Location />
@@ -218,7 +205,7 @@ function AppContent() {
         )}
       </main>
       
-      <Contact onOpenLegal={openLegal} onOpenAdmin={() => setIsAdminOpen(true)} />
+      <Contact onOpenLegal={openLegal} />
       
       <LegalDocs 
         isOpen={isLegalOpen} 
@@ -226,7 +213,6 @@ function AppContent() {
         initialSection={legalSection} 
       />
       <CookieBanner onOpenPrivacy={() => openLegal('privacy')} />
-      <AdminTool isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
       <EasterEggModal isOpen={showEasterEgg} onClose={() => setShowEasterEgg(false)} />
       <ConnectionStatus />
       <ScrollToTop />

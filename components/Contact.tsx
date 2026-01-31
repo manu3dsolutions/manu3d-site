@@ -1,14 +1,13 @@
 import React from 'react';
-import { Mail, MapPin, Instagram, Facebook, Shield, Settings, Truck, Lock, Headphones, Sparkles, CreditCard } from 'lucide-react';
+import { Mail, MapPin, Instagram, Facebook, Shield, Truck, Lock, Headphones, Sparkles } from 'lucide-react';
 import { CONTACT_INFO } from '../constants';
 import { useLiveContent } from '../LiveContent';
 
 interface ContactProps {
   onOpenLegal: (section: string) => void;
-  onOpenAdmin: () => void;
 }
 
-const Contact: React.FC<ContactProps> = ({ onOpenLegal, onOpenAdmin }) => {
+const Contact: React.FC<ContactProps> = ({ onOpenLegal }) => {
   const { assets } = useLiveContent();
   const [logoError, setLogoError] = React.useState(false);
   
@@ -169,8 +168,6 @@ const Contact: React.FC<ContactProps> = ({ onOpenLegal, onOpenAdmin }) => {
              <button onClick={() => onOpenLegal('privacy')} className="hover:text-manu-orange transition-colors">Données (RGPD)</button>
              <button onClick={() => onOpenLegal('ip')} className="hover:text-manu-orange transition-colors">Propriété Intellectuelle</button>
           </div>
-
-          <button onClick={onOpenAdmin} className="absolute bottom-0 right-0 p-3 text-gray-600 hover:text-manu-orange transition-colors opacity-70 hover:opacity-100 hover:rotate-90 duration-500" title="Outil Admin"><Settings size={16} /></button>
         </div>
       </div>
     </footer>
